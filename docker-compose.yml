@@ -1,0 +1,10 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: airport_db
+    environment:
+      POSTGRES_USER: airport_user
+      POSTGRES_PASSWORD: airport_pass
+      POSTGRES_DB: airport_db
+    ports:
+      - "5433:5432"

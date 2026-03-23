@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int        @id @default(autoincrement())
+  username     String     @unique
+  email        String     @unique
+  passwordHash String     @map("password_hash")
+  role         Role       @default(DISPATCHER)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  flights      Flight[]
+  auditLogs    AuditLog[]
+}
+
+enum Role {
+  ADMIN
+  DISPATCHER
+}
+
+model Gate {
+  id       Int      @id @default(autoincrement())
+  name     String   @unique
+  terminal String
+  flights  Flight[]
+}
+
+model Flight {
+  id            Int          @id @default(autoincrement())
+  flightNumber  String       @unique @map("flight_number")
+  origin        String
+  destination   String
+  departureTime DateTime     @map("departure_time")
+  arrivalTime   DateTime     @map("arrival_time")
+  gateId        Int?         @map("gate_id")
+  gate          Gate?        @relation(fields: [gateId], references: [id])
+  status        FlightStatus @default(SCHEDULED)
+  createdById   Int          @map("created_by_id")
+  createdBy     User         @relation(fields: [createdById], references: [id])
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+}
+
+enum FlightStatus {
+  SCHEDULED
+  BOARDING
+  DEPARTED
+  ARRIVED
+  DELAYED
+  CANCELLED
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  user       User     @relation(fields: [userId], references: [id])
+  action     String
+  entityType String   @map("entity_type")
+  entityId   Int?     @map("entity_id")
+  details    String?
+  createdAt  DateTime @default(now()) @map("created_at")
+}
