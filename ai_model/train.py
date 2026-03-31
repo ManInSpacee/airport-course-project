@@ -13,7 +13,7 @@ hour = np.random.randint(0, 24, n)
 is_weekend = np.random.randint(0, 2, n)
 gate_load = np.random.randint(0, 6, n)
 historical_delays = np.random.randint(0, 11, n)
-# Считаем score по тем же правилам что были в rule-based
+
 score = np.zeros(n)
 
 # Загрузка гейта
@@ -29,7 +29,7 @@ score += np.where(is_weekend == 1, 15, 0)
 # История задержек
 score += np.where(historical_delays >= 5, 20, np.where(historical_delays >= 2, 10, 0))
 
-# Добавляем шум чтобы модель не была идеальной (реалистично)
+# Шум
 score += np.random.normal(0, 8, n)
 score = np.clip(score, 0, 100)
 

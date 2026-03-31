@@ -26,7 +26,12 @@ const router = Router()
  *         description: Список гейтов с количеством рейсов
  */
 router.get('/', authenticate, async (req: Request, res: Response) => {
-  const gates = await prisma.gate.findMany({ include: { _count: { select: { flights: true } } } })
+  const { terminal, name } = req.query as Record<string, string>
+  const where: any = {}
+  if (terminal) where.terminal = terminal
+  if (name) where.name = { contains: name, mode: 'insensitive' }
+
+  const gates = await prisma.gate.findMany({ where, include: { _count: { select: { flights: true } } } })
   res.json(gates)
 })
 

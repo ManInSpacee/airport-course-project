@@ -1,4 +1,5 @@
 import 'dotenv/config'
+import 'express-async-errors'
 import express from 'express'
 import swaggerUi from 'swagger-ui-express'
 import swaggerJsdoc from 'swagger-jsdoc'
@@ -33,6 +34,11 @@ app.use('/api/ai', aiRoutes)
 app.use('/api/audit', auditRoutes)
 
 app.get('/', (req, res) => res.json({ message: 'Airport API (Node.js + TypeScript)', docs: '/docs' }))
+
+app.use((err: any, req: any, res: any, next: any) => {
+  console.error(err)
+  res.status(500).json({ error: 'Внутренняя ошибка сервера' })
+})
 
 const PORT = process.env.PORT || 3000
 app.listen(PORT, () => {

@@ -56,18 +56,18 @@ def predict(features: FlightFeatures):
 
     prediction = int(model.predict(X)[0])
     probabilities = model.predict_proba(X)[0]
-    score = round(float(probabilities[prediction]) * 100)
+    confidence = round(float(probabilities[prediction]) * 100)
 
     return {
         "level": LABELS[prediction],
         "interpretation": INTERPRETATIONS[prediction],
-        "score": score,
+        "confidence": confidence,
         "probabilities": {
             "LOW": round(float(probabilities[0]) * 100),
             "MEDIUM": round(float(probabilities[1]) * 100),
             "HIGH": round(float(probabilities[2]) * 100)
         },
-        "expected_delay_minutes": get_expected_minutes(score, prediction),
+        "expected_delay_minutes": get_expected_minutes(confidence, prediction),
         "reason": get_reason(features)
     }
 

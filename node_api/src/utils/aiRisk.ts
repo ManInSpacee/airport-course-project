@@ -11,11 +11,11 @@ export async function calculateDelayRisk(flightId: number) {
 
   const departureTime = new Date(flight.departureTime)
 
-  // Загрузка гейта — рейсы на том же гейте в пределах ±2 часов
+  // Загрузка гейта — рейсы на том же гейте в пределах 2 часов
   let gateLoad = 0
   if (flight.gateId) {
     const from = new Date(departureTime.getTime() - 2 * 3600000)
-    const to = new Date(departureTime.getTime() + 2 * 3600000)
+    const to = departureTime
     gateLoad = await prisma.flight.count({
       where: {
         gateId: flight.gateId,
@@ -40,8 +40,8 @@ export async function calculateDelayRisk(flightId: number) {
 
   // Собираем признаки и отправляем в ML сервис
   const features = {
-    hour: departureTime.getHours(),
-    is_weekend: [0, 6].includes(departureTime.getDay()) ? 1 : 0,
+    hour: departureTime.getUTCHours(),
+    is_weekend: [0, 6].includes(departureTime.getUTCDay()) ? 1 : 0,
     gate_load: gateLoad,
     historical_delays: historicalDelays
   }

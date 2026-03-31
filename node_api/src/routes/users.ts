@@ -71,6 +71,7 @@ router.get('/', authenticate, requireRole('ADMIN'), async (req: Request, res: Re
 router.patch('/:id/role', authenticate, requireRole('ADMIN'), async (req: Request, res: Response) => {
   const { role } = req.body
   if (!['ADMIN', 'DISPATCHER'].includes(role)) return res.status(400).json({ error: 'Недопустимая роль' })
+  if (req.user!.id === Number(req.params.id)) return res.status(403).json({ error: 'Нельзя изменить собственную роль' })
   try {
     const user = await prisma.user.update({
       where: { id: Number(req.params.id) },
