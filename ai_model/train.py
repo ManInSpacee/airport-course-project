@@ -48,7 +48,6 @@ df = pd.DataFrame({
 print("Распределение классов:")
 print(df['risk'].value_counts().sort_index().rename({0: 'LOW', 1: 'MEDIUM', 2: 'HIGH'}))
 
-# Обучаем модель
 X = df[['hour', 'is_weekend', 'gate_load', 'historical_delays']]
 y = df['risk']
 
@@ -60,5 +59,4 @@ model.fit(X_train, y_train)
 print("\nОценка модели:")
 print(classification_report(y_test, model.predict(X_test), target_names=['LOW', 'MEDIUM', 'HIGH']))
 
-# Сохраняем модель
 joblib.dump(model, 'ai_model/model.joblib')

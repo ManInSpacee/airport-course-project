@@ -2,10 +2,12 @@ from fastapi import FastAPI
 from pydantic import BaseModel, Field
 import joblib
 import numpy as np
+import os
 
 app = FastAPI(title="Airport AI — Delay Risk Model")
 
-model = joblib.load("ai_model/model.joblib")
+_dir = os.path.dirname(os.path.abspath(__file__))
+model = joblib.load(os.path.join(_dir, "model.joblib"))
 
 LABELS = {0: "LOW", 1: "MEDIUM", 2: "HIGH"}
 INTERPRETATIONS = {
@@ -20,23 +22,30 @@ class FlightFeatures(BaseModel):
     gate_load: int = Field(..., ge=0, le=10, description="Кол-во рейсов на гейте в ±2 часа (0–10)")
     historical_delays: int = Field(..., ge=0, le=50, description="Задержки на маршруте за 30 дней (0–50)")
 
-def get_reason(features: FlightFeatures) -> str:
-    if features.gate_load >= 3:
-        return "Высокая загрузка гейта"
-    if features.historical_delays >= 5:
-        return "Частые задержки на данном маршруте"
+def get_reasons(features: FlightFeatures) -> list[str]:
+    reasons = []
     is_peak = (6 <= features.hour <= 9) or (16 <= features.hour <= 20)
-    if is_peak and features.gate_load >= 2:
-        return "Час пик и загруженный гейт"
-    if features.historical_delays >= 2:
-        return "Повышенная история задержек на маршруте"
+
+    if features.gate_load >= 3:
+        reasons.append("Высокая загрузка гейта")
+    elif features.gate_load >= 1:
+        reasons.append("Умеренная загрузка гейта")
+
+    if features.historical_delays >= 5:
+        reasons.append("Частые задержки на данном маршруте")
+    elif features.historical_delays >= 2:
+        reasons.append("Повышенная история задержек на маршруте")
+
     if is_peak:
-        return "Час пик"
+        reasons.append("Час пик")
+
     if features.is_weekend:
-        return "Повышенный пассажиропоток в выходной день"
-    if features.gate_load >= 1:
-        return "Умеренная загрузка гейта"
-    return "Нет выраженных факторов риска"
+        reasons.append("Повышенный пассажиропоток в выходной день")
+
+    if not reasons:
+        reasons.append("Нет выраженных факторов риска")
+
+    return reasons
 
 def get_expected_minutes(score: int, prediction: int) -> int:
     if prediction == 0:
@@ -68,7 +77,7 @@ def predict(features: FlightFeatures):
             "HIGH": round(float(probabilities[2]) * 100)
         },
         "expected_delay_minutes": get_expected_minutes(confidence, prediction),
-        "reason": get_reason(features)
+        "reasons": get_reasons(features)
     }
 
 @app.get("/health")

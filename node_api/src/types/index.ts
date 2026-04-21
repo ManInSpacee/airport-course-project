@@ -7,7 +7,6 @@ export interface JwtPayload {
   role: UserRole
 }
 
-// Расширяем тип Request в Express — добавляем поле user
 declare global {
   namespace Express {
     interface Request {
