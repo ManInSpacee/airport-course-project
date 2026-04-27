@@ -1,0 +1,125 @@
+// Формы: панель инструментов, поля ввода, кнопки
+
+// Тулбар над таблицами (фильтры + действия)
+.toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  .spacer { flex: 1; }
+}
+
+// Подпись над полем
+label.lbl {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+// Поля ввода (input/select/textarea с классом .ctl)
+input.ctl,
+select.ctl,
+textarea.ctl {
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--text);
+  border-radius: 2px;
+  min-width: 120px;
+
+  &:focus {
+    outline: 1px solid var(--accent);
+    border-color: var(--accent);
+  }
+  &.err {
+    border-color: var(--err);
+    background: #fff4f4;
+  }
+}
+
+.err-msg {
+  color: var(--err);
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.hint {
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+// Горизонтальный ряд элементов
+.row {
+  display: flex;
+  gap: 10px;
+  > * { flex: 1; }
+}
+
+.form-row {
+  margin-bottom: 10px;
+}
+
+// Кнопки
+.btn {
+  font: inherit;
+  font-size: 13px;
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  background: #f0f0f0;
+  color: var(--text);
+  border-radius: 2px;
+  cursor: pointer;
+  min-height: 26px;
+  white-space: nowrap;
+
+  &:hover { background: #e6e6e6; }
+
+  &.primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: #234b8f;
+    &:hover { background: #2556a0; }
+  }
+  &.danger { color: var(--err); }
+  &.small {
+    padding: 2px 8px;
+    min-height: 22px;
+    font-size: 12px;
+  }
+  &.link {
+    background: none;
+    border: none;
+    color: var(--accent);
+    padding: 0;
+    min-height: 0;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// Группа кнопок (radio-like, например выбор статуса)
+.btn-group {
+  display: inline-flex;
+  .btn {
+    border-radius: 0;
+    border-right-width: 0;
+    &:first-child { border-radius: 2px 0 0 2px; }
+    &:last-child {
+      border-radius: 0 2px 2px 0;
+      border-right-width: 1px;
+    }
+    &.on {
+      background: #d9e3f2;
+      border-color: var(--accent);
+    }
+  }
+}

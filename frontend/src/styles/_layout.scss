@@ -1,0 +1,106 @@
+// Каркас приложения: внешняя рамка, шапка, сайдбар, основная область, подвал
+
+.screen {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+// Верхняя панель (бренд, имя пользователя)
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  background: var(--bg-head);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  flex-shrink: 0;
+  .brand { font-weight: 600; }
+  .spacer { flex: 1; }
+  .user { color: var(--text-muted); }
+}
+
+// Боковая панель навигации
+.sidebar {
+  width: 170px;
+  border-right: 1px solid var(--border);
+  background: var(--bg-alt);
+  padding: 8px 0;
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+
+  a {
+    padding: 6px 14px;
+    color: var(--text);
+    text-decoration: none;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+    display: block;
+
+    &.active {
+      background: #fff;
+      border-left-color: var(--accent);
+      font-weight: 600;
+    }
+    &:hover:not(.active) {
+      background: #ebebeb;
+    }
+  }
+
+  .section {
+    padding: 12px 14px 4px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-faint);
+  }
+}
+
+// Основная рабочая область
+.main {
+  flex: 1;
+  padding: 14px;
+  overflow: auto;
+  min-width: 0;
+}
+
+.page-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+
+// Хлебные крошки
+.breadcrumb {
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+// Подвал
+.footer-bar {
+  border-top: 1px solid var(--border);
+  padding: 4px 10px;
+  background: var(--bg-alt);
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 14px;
+  flex-shrink: 0;
+}

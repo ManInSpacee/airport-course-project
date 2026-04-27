@@ -1,0 +1,78 @@
+// Модальные окна и экраны авторизации (логин/регистрация)
+
+.modal-backdrop {
+  background: rgba(0, 0, 0, 0.2);
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 100;
+}
+
+.modal {
+  background: #fff;
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  min-width: 360px;
+  max-width: 100%;
+}
+
+.modal-head {
+  padding: 6px 10px;
+  background: var(--bg-head);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+
+  .close {
+    margin-left: auto;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--text-muted);
+  }
+}
+
+.modal-body {
+  padding: 12px;
+}
+
+.modal-foot {
+  padding: 8px 10px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-alt);
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+// Экраны входа и регистрации
+.auth-wrap {
+  background: #e9edf2;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.auth-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  padding: 24px 28px;
+  width: 320px;
+
+  h1 {
+    font-size: 18px;
+    margin: 0 0 4px;
+  }
+  .sub {
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-bottom: 14px;
+  }
+}

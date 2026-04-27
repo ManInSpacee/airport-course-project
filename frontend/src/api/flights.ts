@@ -14,7 +14,7 @@ export const flightsApi = {
     if (filters.status) params.set('status', filters.status)
     if (filters.origin) params.set('origin', filters.origin)
     if (filters.destination) params.set('destination', filters.destination)
-    if (filters.gateId) params.set('gateId', filters.gateId)
+    if (filters.gateId) params.set('gate_id', filters.gateId)
     const q = params.toString()
     return api.get<Flight[]>(`/flights${q ? '?' + q : ''}`)
   },
@@ -28,7 +28,14 @@ export const flightsApi = {
     departureTime: string
     arrivalTime: string
     gateId?: number | null
-  }) => api.post<Flight>('/flights', data),
+  }) => api.post<Flight>('/flights', {
+    flight_number: data.flightNumber,
+    origin: data.origin,
+    destination: data.destination,
+    departure_time: data.departureTime,
+    arrival_time: data.arrivalTime,
+    gate_id: data.gateId,
+  }),
 
   update: (id: number, data: {
     flightNumber: string
@@ -37,7 +44,14 @@ export const flightsApi = {
     departureTime: string
     arrivalTime: string
     gateId?: number | null
-  }) => api.put<Flight>(`/flights/${id}`, data),
+  }) => api.put<Flight>(`/flights/${id}`, {
+    flight_number: data.flightNumber,
+    origin: data.origin,
+    destination: data.destination,
+    departure_time: data.departureTime,
+    arrival_time: data.arrivalTime,
+    gate_id: data.gateId,
+  }),
 
   changeStatus: (id: number, status: FlightStatus) =>
     api.patch<Flight>(`/flights/${id}/status`, { status }),

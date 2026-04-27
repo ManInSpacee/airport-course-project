@@ -1,0 +1,68 @@
+// Обратная связь пользователю: алерты, тосты, пагинация, пустые состояния, лоадер
+
+.msg {
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  font-size: 12px;
+  margin-bottom: 8px;
+
+  &.warn { border-color: #c99a3d; background: #fff8e6; color: #704e00; }
+  &.err  { border-color: #c66;    background: #fdf0f0; color: #8a2222; }
+  &.info { border-color: #7d9dd1; background: #eff4fc; color: #234b8f; }
+  &.ok   { border-color: #7db37d; background: #f0f8f0; color: #1e6a2f; }
+}
+
+// Всплывающие уведомления
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 200;
+}
+
+.toast {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-size: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
+
+  &.ok  { border-color: #7db37d; background: #f0f8f0; color: #1e6a2f; }
+  &.err { border-color: #c66;    background: #fdf0f0; color: #8a2222; }
+}
+
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  .spacer { flex: 1; }
+}
+
+.empty-state {
+  border: 1px solid var(--border);
+  padding: 40px;
+  text-align: center;
+  color: var(--text-muted);
+
+  .empty-title {
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  .empty-sub {
+    font-size: 12px;
+  }
+}
+
+.loading {
+  padding: 20px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 12px;
+}

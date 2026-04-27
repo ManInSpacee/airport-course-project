@@ -1,0 +1,52 @@
+// Таблицы (.tbl) и индикатор статуса (.st)
+
+table.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+
+  th, td {
+    padding: 4px 8px;
+    text-align: left;
+    border-bottom: 1px solid #e3e3e3;
+    white-space: nowrap;
+  }
+  th {
+    background: var(--bg-head);
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    user-select: none;
+  }
+  tbody tr:nth-child(even) { background: #fafafa; }
+  tbody tr:hover { background: #eef3fa; }
+
+  td.num { font-variant-numeric: tabular-nums; }
+  td.actions {
+    text-align: right;
+    .btn { margin-left: 2px; }
+  }
+}
+
+// Цветной индикатор статуса рейса
+.st {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  .d {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+  }
+}
+
+.st-scheduled .d { background: #bbb; }
+.st-boarding .d  { background: #2b5fb3; }
+.st-departed .d  { background: #1e7a3a; }
+.st-arrived .d   { background: #0f5128; }
+.st-delayed .d   { background: #e07a00; }
+.st-cancelled .d { background: #b33; }
