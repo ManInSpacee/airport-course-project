@@ -19,8 +19,8 @@ export function RegisterPage() {
 
     if (!u || !e || !password) return 'Заполните все поля'
 
-    if (u.length < 3 || u.length > 30)
-      return 'Имя пользователя — от 3 до 30 символов'
+    if (u.length < 3 || u.length > 12)
+      return 'Имя пользователя — от 3 до 12 символов'
     if (!/^[a-zA-Z0-9_]+$/.test(u))
       return 'Имя пользователя: только латинские буквы, цифры и _'
 
