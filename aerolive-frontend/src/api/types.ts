@@ -35,7 +35,7 @@ export interface AuditLog {
   action: ActionType
   entityType: string
   entityId: number
-  description: string
+  details: string | null
   createdAt: string
   user: { username: string }
 }

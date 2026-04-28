@@ -102,7 +102,7 @@ export function AuditPage() {
                   </td>
                   <td>{log.entityType}</td>
                   <td className="num">{log.entityId}</td>
-                  <td style={{ whiteSpace: 'normal', maxWidth: 300 }}>{log.description}</td>
+                  <td style={{ whiteSpace: 'normal', maxWidth: 300 }}>{log.details ?? '—'}</td>
                 </tr>
               ))}
             </tbody>
