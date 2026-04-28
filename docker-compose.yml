@@ -17,7 +17,7 @@ services:
       retries: 10
 
   api:
-    build: ./node_api
+    build: ./aerolive-backend
     container_name: airport_api
     environment:
       DATABASE_URL: postgresql://airport_user:airport_pass@postgres:5432/airport_db
@@ -31,13 +31,13 @@ services:
         condition: service_healthy
 
   ai:
-    build: ./ai_model
+    build: ./aerolive-ai
     container_name: airport_ai
     ports:
       - "8000:8000"
 
   frontend:
-    build: ./frontend
+    build: ./aerolive-frontend
     container_name: airport_frontend
     ports:
       - "80:80"
