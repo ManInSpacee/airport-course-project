@@ -29,6 +29,7 @@ export function FlightFormPage() {
   const [arrivalTime, setArrivalTime] = useState('')
   const [gateId, setGateId] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [formError, setFormError] = useState('')
 
   useEffect(() => {
     gatesApi.list().then(setGates).catch(() => {})
@@ -49,10 +50,22 @@ export function FlightFormPage() {
 
   function validate() {
     const e: Record<string, string> = {}
-    if (!flightNumber.trim()) e.flightNumber = 'Обязательное поле'
-    if (!origin.trim()) e.origin = 'Обязательное поле'
-    if (!destination.trim()) e.destination = 'Обязательное поле'
     const maxYear = new Date().getFullYear() + 1
+
+    if (!flightNumber.trim()) {
+      e.flightNumber = 'Обязательное поле'
+    } else if (!/^[A-Z0-9]{1,3}-\d{1,4}$/.test(flightNumber.trim())) {
+      e.flightNumber = 'Формат: SU-101, U6-205, DP-3'
+    }
+
+    if (!origin.trim()) e.origin = 'Обязательное поле'
+    else if (origin.trim().length < 2) e.origin = 'Минимум 2 символа'
+
+    if (!destination.trim()) e.destination = 'Обязательное поле'
+    else if (destination.trim().length < 2) e.destination = 'Минимум 2 символа'
+
+    if (origin.trim() && destination.trim() && origin.trim().toLowerCase() === destination.trim().toLowerCase())
+      e.destination = 'Откуда и куда не могут совпадать'
 
     if (!departureTime) {
       e.departureTime = 'Обязательное поле'
@@ -74,6 +87,7 @@ export function FlightFormPage() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
+    setFormError('')
     const errs = validate()
     setErrors(errs)
     if (Object.keys(errs).length > 0) return
@@ -98,7 +112,7 @@ export function FlightFormPage() {
         navigate(`/flights/${created.id}`)
       }
     } catch (err: any) {
-      showToast(err.message, 'err')
+      setFormError(err.message)
     } finally {
       setSaving(false)
     }
@@ -155,6 +169,7 @@ export function FlightFormPage() {
             {gates.map(g => <option key={g.id} value={g.id}>{g.name} (Терминал {g.terminal})</option>)}
           </select>
         </div>
+        {formError && <div className="err-msg" style={{ marginBottom: 8 }}>{formError}</div>}
         <div className="toolbar" style={{ marginTop: 16 }}>
           <button className="btn" type="button" onClick={() => navigate(isEdit ? `/flights/${id}` : '/flights')}>Отмена</button>
           <button className="btn primary" type="submit" disabled={saving}>
