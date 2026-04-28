@@ -1,30 +1,38 @@
-const BASE = '/api'
+import axios from 'axios'
 
-function getToken() {
-  return localStorage.getItem('token')
-}
+export const client = axios.create({
+  baseURL: '/api',
+})
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = getToken()
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string>),
+client.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
   }
-  if (token) headers['Authorization'] = `Bearer ${token}`
+  return config
+})
 
-  const res = await fetch(BASE + path, { ...options, headers })
-
-  if (res.status === 204) return undefined as T
-
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.error || 'Ошибка запроса')
-  return data as T
-}
+client.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const message = error.response?.data?.error || 'Ошибка запроса'
+    return Promise.reject(new Error(message))
+  },
+)
 
 export const api = {
-  get: <T>(path: string) => request<T>(path),
-  post: <T>(path: string, body: unknown) => request<T>(path, { method: 'POST', body: JSON.stringify(body) }),
-  put: <T>(path: string, body: unknown) => request<T>(path, { method: 'PUT', body: JSON.stringify(body) }),
-  patch: <T>(path: string, body: unknown) => request<T>(path, { method: 'PATCH', body: JSON.stringify(body) }),
-  delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
+  get: <T>(path: string) =>
+    client.get<T>(path).then((r) => r.data),
+
+  post: <T>(path: string, body: unknown) =>
+    client.post<T>(path, body).then((r) => r.data),
+
+  put: <T>(path: string, body: unknown) =>
+    client.put<T>(path, body).then((r) => r.data),
+
+  patch: <T>(path: string, body: unknown) =>
+    client.patch<T>(path, body).then((r) => r.data),
+
+  delete: <T>(path: string) =>
+    client.delete<T>(path).then((r) => r.data),
 }
