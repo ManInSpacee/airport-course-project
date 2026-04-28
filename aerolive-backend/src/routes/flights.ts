@@ -6,6 +6,37 @@ import { logAction } from '../utils/audit'
 
 const router = Router()
 const VALID_STATUSES = ['SCHEDULED', 'BOARDING', 'DEPARTED', 'ARRIVED', 'DELAYED', 'CANCELLED']
+const MAX_YEAR = new Date().getFullYear() + 1
+
+function validateFlightBody(body: any): string | null {
+  const { flight_number, origin, destination, departure_time, arrival_time } = body
+
+  if (!flight_number || !origin || !destination || !departure_time || !arrival_time)
+    return 'Заполните все обязательные поля'
+
+  if (!/^[A-Z0-9]{1,3}-\d{1,4}$/.test(String(flight_number).trim()))
+    return 'Номер рейса: формат XX-NNN (например SU-101, U6-205)'
+
+  if (String(origin).trim().length < 2 || String(origin).trim().length > 100)
+    return 'Откуда: от 2 до 100 символов'
+
+  if (String(destination).trim().length < 2 || String(destination).trim().length > 100)
+    return 'Куда: от 2 до 100 символов'
+
+  if (String(origin).trim().toLowerCase() === String(destination).trim().toLowerCase())
+    return 'Откуда и куда не могут совпадать'
+
+  const dep = new Date(departure_time)
+  const arr = new Date(arrival_time)
+
+  if (isNaN(dep.getTime())) return 'Некорректная дата вылета'
+  if (isNaN(arr.getTime())) return 'Некорректная дата прилёта'
+  if (dep.getFullYear() > MAX_YEAR) return `Год вылета не может быть позднее ${MAX_YEAR}`
+  if (arr.getFullYear() > MAX_YEAR) return `Год прилёта не может быть позднее ${MAX_YEAR}`
+  if (arr <= dep) return 'Время прилёта должно быть позже времени вылета'
+
+  return null
+}
 
 /**
  * @swagger
@@ -134,9 +165,8 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
 router.post('/', authenticate, async (req: Request, res: Response) => {
   const { flight_number, origin, destination, departure_time, arrival_time, gate_id } = req.body
 
-  if (new Date(arrival_time) <= new Date(departure_time)) {
-    return res.status(400).json({ error: 'Время прилёта должно быть позже времени вылета' })
-  }
+  const validationError = validateFlightBody(req.body)
+  if (validationError) return res.status(400).json({ error: validationError })
 
   if (gate_id) {
     const dep = new Date(departure_time)
@@ -219,6 +249,10 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
  */
 router.put('/:id', authenticate, async (req: Request, res: Response) => {
   const { flight_number, origin, destination, departure_time, arrival_time, gate_id } = req.body
+
+  const validationError = validateFlightBody(req.body)
+  if (validationError) return res.status(400).json({ error: validationError })
+
   try {
     const flight = await prisma.flight.update({
       where: { id: Number(req.params.id) },
