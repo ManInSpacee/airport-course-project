@@ -1,3 +1,5 @@
+import os
+import kagglehub
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
@@ -5,58 +7,81 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 import joblib
 
-np.random.seed(42)
-n = 2000
+print("Скачиваем датасет...")
+path = kagglehub.dataset_download("usdot/flight-delays")
+flights_path = os.path.join(path, "flights.csv")
+print(f"Датасет: {flights_path}")
 
-# Генерируем признаки
-hour = np.random.randint(0, 24, n)
-is_weekend = np.random.randint(0, 2, n)
-gate_load = np.random.randint(0, 6, n)
-historical_delays = np.random.randint(0, 11, n)
+print("Загружаем данные...")
+df = pd.read_csv(
+    flights_path,
+    usecols=[
+        "MONTH", "DAY", "DAY_OF_WEEK",
+        "DEPARTURE_TIME", "ARRIVAL_DELAY",
+        "CANCELLED", "ORIGIN", "DESTINATION"
+    ],
+    low_memory=False
+)
 
-score = np.zeros(n)
+# Берём 300 000 строк — достаточно для обучения, не грузит память
+df = df.sample(n=300_000, random_state=42).reset_index(drop=True)
 
-# Загрузка гейта
-score += np.where(gate_load >= 3, 40, np.where(gate_load >= 2, 25, np.where(gate_load >= 1, 10, 0)))
+print(f"Строк после выборки: {len(df)}")
 
-# Час пик
-is_peak = ((hour >= 6) & (hour <= 9)) | ((hour >= 16) & (hour <= 20))
-score += np.where(is_peak, 20, 0)
+# --- Признак: hour ---
+# DEPARTURE_TIME хранится как 1430 = 14:30, берём целую часть
+df["hour"] = (df["DEPARTURE_TIME"].fillna(0) // 100).astype(int).clip(0, 23)
 
-# Выходной
-score += np.where(is_weekend == 1, 15, 0)
+# --- Признак: is_weekend ---
+# DAY_OF_WEEK: 1=Пн ... 7=Вс
+df["is_weekend"] = df["DAY_OF_WEEK"].isin([6, 7]).astype(int)
 
-# История задержек
-score += np.where(historical_delays >= 5, 20, np.where(historical_delays >= 2, 10, 0))
+# --- Признак: gate_load ---
+# Сколько рейсов вылетает из того же аэропорта в тот же час того же дня
+df["gate_load"] = (
+    df.groupby(["ORIGIN", "MONTH", "DAY", "hour"])["hour"]
+    .transform("count") - 1  # минус сам рейс
+).clip(0, 10).astype(int)
 
-# Шум
-score += np.random.normal(0, 8, n)
-score = np.clip(score, 0, 100)
+# --- Признак: historical_delays ---
+# Доля задержанных рейсов на маршруте ORIGIN→DESTINATION (0–10 в целых)
+df["is_delayed_flag"] = (
+    (df["ARRIVAL_DELAY"].fillna(0) > 15) | (df["CANCELLED"] == 1)
+).astype(int)
 
-# Метки классов
-risk = np.where(score <= 33, 0, np.where(score <= 66, 1, 2))  # 0=LOW, 1=MEDIUM, 2=HIGH
+route_rate = (
+    df.groupby(["ORIGIN", "DESTINATION"])["is_delayed_flag"]
+    .mean()
+    .rename("delay_rate")
+)
+df = df.join(route_rate, on=["ORIGIN", "DESTINATION"])
+df["historical_delays"] = (df["delay_rate"] * 10).round().clip(0, 10).fillna(0).astype(int)
 
-# Датафрейм
-df = pd.DataFrame({
-    'hour': hour,
-    'is_weekend': is_weekend,
-    'gate_load': gate_load,
-    'historical_delays': historical_delays,
-    'risk': risk
-})
+# --- Целевая переменная ---
+# LOW=0, MEDIUM=1, HIGH=2
+df["risk"] = 0
+df.loc[df["ARRIVAL_DELAY"].fillna(0) > 15, "risk"] = 1
+df.loc[(df["ARRIVAL_DELAY"].fillna(0) > 45) | (df["CANCELLED"] == 1), "risk"] = 2
 
-print("Распределение классов:")
-print(df['risk'].value_counts().sort_index().rename({0: 'LOW', 1: 'MEDIUM', 2: 'HIGH'}))
+# Убираем строки с пропусками в признаках
+df = df.dropna(subset=["hour", "is_weekend", "gate_load", "historical_delays"])
 
-X = df[['hour', 'is_weekend', 'gate_load', 'historical_delays']]
-y = df['risk']
+print("\nРаспределение классов:")
+print(df["risk"].value_counts().sort_index().rename({0: "LOW", 1: "MEDIUM", 2: "HIGH"}))
+
+features = ["hour", "is_weekend", "gate_load", "historical_delays"]
+X = df[features]
+y = df["risk"]
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-model = RandomForestClassifier(n_estimators=100, random_state=42)
+print("\nОбучаем модель...")
+model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
 model.fit(X_train, y_train)
 
 print("\nОценка модели:")
-print(classification_report(y_test, model.predict(X_test), target_names=['LOW', 'MEDIUM', 'HIGH']))
+print(classification_report(y_test, model.predict(X_test), target_names=["LOW", "MEDIUM", "HIGH"]))
 
-joblib.dump(model, 'ai_model/model.joblib')
+out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "model.joblib")
+joblib.dump(model, out)
+print(f"\nМодель сохранена: {out}")
