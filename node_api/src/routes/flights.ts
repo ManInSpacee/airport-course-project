@@ -279,7 +279,8 @@ router.patch('/:id/status', authenticate, async (req: Request, res: Response) =>
   try {
     const flight = await prisma.flight.update({
       where: { id: Number(req.params.id) },
-      data: { status }
+      data: { status },
+      include: { gate: true, createdBy: { select: { id: true, username: true } } }
     })
     await logAction(req.user!.id, 'STATUS_CHANGE', 'Flight', flight.id, `Статус рейса ${flight.flightNumber} → ${status}`)
     res.json(flight)
