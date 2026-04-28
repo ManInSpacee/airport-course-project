@@ -5,6 +5,9 @@ export const usersApi = {
   list: () =>
     api.get<User[]>('/users'),
 
+  create: (data: { username: string; email: string; password: string; role: Role }) =>
+    api.post<User>('/users', data),
+
   changeRole: (id: number, role: Role) =>
     api.patch<User>(`/users/${id}/role`, { role }),
 

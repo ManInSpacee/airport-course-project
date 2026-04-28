@@ -47,6 +47,9 @@ const router = Router()
  *         description: Email или username уже занят
  */
 router.post('/register', async (req: Request, res: Response) => {
+  const count = await prisma.user.count()
+  if (count > 0) return res.status(403).json({ error: 'Регистрация закрыта. Обратитесь к администратору.' })
+
   const { username, email, password, role } = req.body
 
   if (!username || !email || !password)

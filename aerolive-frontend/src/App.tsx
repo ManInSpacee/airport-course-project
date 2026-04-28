@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
 import { LoginPage } from './pages/LoginPage'
-import { RegisterPage } from './pages/RegisterPage'
 import { FlightsPage } from './pages/FlightsPage'
 import { FlightDetailPage } from './pages/FlightDetailPage'
 import { FlightFormPage } from './pages/FlightFormPage'
@@ -29,7 +28,6 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={token ? <Navigate to="/flights" replace /> : <LoginPage />} />
-      <Route path="/register" element={token ? <Navigate to="/flights" replace /> : <RegisterPage />} />
       <Route path="/flights" element={<RequireAuth><FlightsPage /></RequireAuth>} />
       <Route path="/flights/new" element={<RequireAuth><FlightFormPage /></RequireAuth>} />
       <Route path="/flights/:id" element={<RequireAuth><FlightDetailPage /></RequireAuth>} />
