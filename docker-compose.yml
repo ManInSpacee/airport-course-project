@@ -8,3 +8,41 @@ services:
       POSTGRES_DB: airport_db
     ports:
       - "5433:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airport_user -d airport_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./node_api
+    container_name: airport_api
+    environment:
+      DATABASE_URL: postgresql://airport_user:airport_pass@postgres:5432/airport_db
+      JWT_SECRET: supersecret_jwt_key
+      ML_SERVICE_URL: http://ai:8000
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  ai:
+    build: ./ai_model
+    container_name: airport_ai
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: ./frontend
+    container_name: airport_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+
+volumes:
+  pg_data:
