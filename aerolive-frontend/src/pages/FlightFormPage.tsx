@@ -52,10 +52,23 @@ export function FlightFormPage() {
     if (!flightNumber.trim()) e.flightNumber = 'Обязательное поле'
     if (!origin.trim()) e.origin = 'Обязательное поле'
     if (!destination.trim()) e.destination = 'Обязательное поле'
-    if (!departureTime) e.departureTime = 'Обязательное поле'
-    if (!arrivalTime) e.arrivalTime = 'Обязательное поле'
+    const maxYear = new Date().getFullYear() + 1
+
+    if (!departureTime) {
+      e.departureTime = 'Обязательное поле'
+    } else if (new Date(departureTime).getFullYear() > maxYear) {
+      e.departureTime = `Год не может быть позднее ${maxYear}`
+    }
+
+    if (!arrivalTime) {
+      e.arrivalTime = 'Обязательное поле'
+    } else if (new Date(arrivalTime).getFullYear() > maxYear) {
+      e.arrivalTime = `Год не может быть позднее ${maxYear}`
+    }
+
     if (departureTime && arrivalTime && arrivalTime <= departureTime)
       e.arrivalTime = 'Время прилёта должно быть позже вылета'
+
     return e
   }
 

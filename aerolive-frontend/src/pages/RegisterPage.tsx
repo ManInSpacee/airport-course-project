@@ -14,11 +14,24 @@ export function RegisterPage() {
   const navigate = useNavigate()
 
   function validate(): string | null {
-    if (!username.trim() || !email.trim() || !password) return 'Заполните все поля'
-    if (username.trim().length < 3) return 'Имя пользователя — минимум 3 символа'
-    if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) return 'Имя пользователя: только буквы, цифры и _'
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return 'Введите корректный email'
-    if (password.length < 6) return 'Пароль — минимум 6 символов'
+    const u = username.trim()
+    const e = email.trim()
+
+    if (!u || !e || !password) return 'Заполните все поля'
+
+    if (u.length < 3 || u.length > 30)
+      return 'Имя пользователя — от 3 до 30 символов'
+    if (!/^[a-zA-Z0-9_]+$/.test(u))
+      return 'Имя пользователя: только латинские буквы, цифры и _'
+
+    if (!/^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(e))
+      return 'Введите корректный email'
+
+    if (password.length < 8)
+      return 'Пароль — минимум 8 символов'
+    if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password))
+      return 'Пароль должен содержать буквы и цифры'
+
     return null
   }
 
@@ -49,16 +62,18 @@ export function RegisterPage() {
             <label className="lbl">Имя пользователя</label>
             <input className="ctl" value={username} placeholder="ivan_disp"
               onChange={e => setUsername(e.target.value)} autoFocus />
+            <div className="hint">Латинские буквы, цифры и _ (3–30 символов)</div>
           </div>
           <div className="form-row">
             <label className="lbl">Email</label>
-            <input className="ctl" type="email" value={email} placeholder="ivan@airport.com"
+            <input className="ctl" value={email} placeholder="ivan@airport.com"
               onChange={e => setEmail(e.target.value)} />
           </div>
           <div className="form-row">
             <label className="lbl">Пароль</label>
-            <input className="ctl" type="password" value={password} placeholder="минимум 6 символов"
+            <input className="ctl" type="password" value={password} placeholder="минимум 8 символов"
               onChange={e => setPassword(e.target.value)} />
+            <div className="hint">Минимум 8 символов, буквы и цифры</div>
           </div>
           <div className="form-row">
             <label className="lbl">Роль</label>
