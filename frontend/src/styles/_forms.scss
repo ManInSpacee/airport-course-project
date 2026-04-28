@@ -86,6 +86,12 @@ textarea.ctl {
     &:hover { background: #2556a0; }
   }
   &.danger { color: var(--err); }
+  &.primary.danger {
+    background: var(--err);
+    border-color: #a00;
+    color: #fff;
+    &:hover { background: #b00; }
+  }
   &.small {
     padding: 2px 8px;
     min-height: 22px;
@@ -123,3 +129,4 @@ textarea.ctl {
     }
   }
 }
+

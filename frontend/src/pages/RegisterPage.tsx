@@ -13,14 +13,23 @@ export function RegisterPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
 
+  function validate(): string | null {
+    if (!username.trim() || !email.trim() || !password) return 'Заполните все поля'
+    if (username.trim().length < 3) return 'Имя пользователя — минимум 3 символа'
+    if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) return 'Имя пользователя: только буквы, цифры и _'
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return 'Введите корректный email'
+    if (password.length < 6) return 'Пароль — минимум 6 символов'
+    return null
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
+    const err = validate()
+    if (err) return setError(err)
     setError('')
-    if (!username || !email || !password) return setError('Заполните все поля')
-    if (password.length < 6) return setError('Пароль минимум 6 символов')
     setLoading(true)
     try {
-      const { token, user } = await authApi.register(username, email, password, role)
+      const { token, user } = await authApi.register(username.trim(), email.trim(), password, role)
       login(token, user)
       navigate('/flights')
     } catch (err: any) {
@@ -38,15 +47,18 @@ export function RegisterPage() {
         <form onSubmit={handleSubmit}>
           <div className="form-row">
             <label className="lbl">Имя пользователя</label>
-            <input className="ctl" value={username} onChange={e => setUsername(e.target.value)} autoFocus />
+            <input className="ctl" value={username} placeholder="ivan_disp"
+              onChange={e => setUsername(e.target.value)} autoFocus />
           </div>
           <div className="form-row">
             <label className="lbl">Email</label>
-            <input className="ctl" type="email" value={email} onChange={e => setEmail(e.target.value)} />
+            <input className="ctl" type="email" value={email} placeholder="ivan@airport.com"
+              onChange={e => setEmail(e.target.value)} />
           </div>
           <div className="form-row">
             <label className="lbl">Пароль</label>
-            <input className="ctl" type="password" value={password} onChange={e => setPassword(e.target.value)} />
+            <input className="ctl" type="password" value={password} placeholder="минимум 6 символов"
+              onChange={e => setPassword(e.target.value)} />
           </div>
           <div className="form-row">
             <label className="lbl">Роль</label>
