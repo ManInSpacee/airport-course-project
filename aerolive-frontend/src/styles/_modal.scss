@@ -64,7 +64,7 @@
   background: #fff;
   border: 1px solid var(--border);
   padding: 24px 28px;
-  width: 320px;
+  width: 340px;
 
   h1 {
     font-size: 18px;
@@ -74,5 +74,9 @@
     color: var(--text-muted);
     font-size: 12px;
     margin-bottom: 14px;
+  }
+  .ctl {
+    width: 100%;
+    box-sizing: border-box;
   }
 }

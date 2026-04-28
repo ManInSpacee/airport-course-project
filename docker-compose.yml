@@ -21,7 +21,7 @@ services:
     container_name: airport_api
     environment:
       DATABASE_URL: postgresql://airport_user:airport_pass@postgres:5432/airport_db
-      JWT_SECRET: supersecret_jwt_key
+      JWT_SECRET: ${JWT_SECRET}
       ML_SERVICE_URL: http://ai:8000
       PORT: "3000"
     ports:

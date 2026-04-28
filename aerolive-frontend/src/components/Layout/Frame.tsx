@@ -11,7 +11,7 @@ export function Frame({ children }: { children: ReactNode }) {
         <main className="main">{children}</main>
       </div>
       <div className="footer-bar">
-        <span>АэроПорт ИС — Управление рейсами</span>
+        <span>Aerolive — Управление рейсами</span>
       </div>
     </div>
   )

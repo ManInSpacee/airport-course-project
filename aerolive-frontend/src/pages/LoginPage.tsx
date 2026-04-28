@@ -30,7 +30,7 @@ export function LoginPage() {
   return (
     <div className="auth-wrap">
       <div className="auth-card">
-        <h1>АэроПорт</h1>
+        <h1>Aerolive</h1>
         <div className="sub">Система управления рейсами</div>
         <form onSubmit={handleSubmit}>
           <div className="form-row">

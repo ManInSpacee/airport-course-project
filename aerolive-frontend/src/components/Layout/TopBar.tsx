@@ -12,7 +12,7 @@ export function TopBar() {
 
   return (
     <div className="topbar">
-      <span className="brand">АэроПорт</span>
+      <span className="brand">Aerolive</span>
       <span className="spacer" />
       {user && (
         <>

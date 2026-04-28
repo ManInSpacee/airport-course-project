@@ -43,7 +43,7 @@ export function RegisterPage() {
     <div className="auth-wrap">
       <div className="auth-card">
         <h1>Регистрация</h1>
-        <div className="sub">Создать аккаунт в АэроПорт</div>
+        <div className="sub">Создать аккаунт в Aerolive</div>
         <form onSubmit={handleSubmit}>
           <div className="form-row">
             <label className="lbl">Имя пользователя</label>
