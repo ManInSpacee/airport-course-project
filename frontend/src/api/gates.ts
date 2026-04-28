@@ -1,16 +1,16 @@
-import { client } from './client'
+import { api } from './client'
 import type { Gate } from './types'
 
 export const gatesApi = {
   list: () =>
-    client.get<Gate[]>('/gates').then((r) => r.data),
+    api.get<Gate[]>('/gates'),
 
   create: (data: { name: string; terminal: string }) =>
-    client.post<Gate>('/gates', data).then((r) => r.data),
+    api.post<Gate>('/gates', data),
 
   update: (id: number, data: { name: string; terminal: string }) =>
-    client.put<Gate>(`/gates/${id}`, data).then((r) => r.data),
+    api.put<Gate>(`/gates/${id}`, data),
 
   delete: (id: number) =>
-    client.delete<void>(`/gates/${id}`).then((r) => r.data),
+    api.delete<void>(`/gates/${id}`),
 }

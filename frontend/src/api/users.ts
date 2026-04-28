@@ -1,13 +1,13 @@
-import { client } from './client'
+import { api } from './client'
 import type { User, Role } from './types'
 
 export const usersApi = {
   list: () =>
-    client.get<User[]>('/users').then((r) => r.data),
+    api.get<User[]>('/users'),
 
   changeRole: (id: number, role: Role) =>
-    client.patch<User>(`/users/${id}/role`, { role }).then((r) => r.data),
+    api.patch<User>(`/users/${id}/role`, { role }),
 
   delete: (id: number) =>
-    client.delete<void>(`/users/${id}`).then((r) => r.data),
+    api.delete<void>(`/users/${id}`),
 }
