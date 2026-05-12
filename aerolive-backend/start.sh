@@ -6,7 +6,7 @@ npx tsx prisma/create-db.ts
 echo "[1/4] Done"
 
 echo "[2/4] Running prisma db push..."
-npx prisma db push --skip-generate
+npx prisma db push
 echo "[2/4] Done"
 
 echo "[3/4] Running seed..."
