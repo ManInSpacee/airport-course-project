@@ -10,4 +10,4 @@ RUN npx prisma generate
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "npx prisma db push && npx tsx prisma/seed.ts && npx tsx src/index.ts"]
+CMD ["sh", "-c", "npx tsx prisma/create-db.ts && npx prisma db push && npx tsx prisma/seed.ts && npx tsx src/index.ts"]
