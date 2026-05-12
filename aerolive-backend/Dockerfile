@@ -7,7 +7,8 @@ RUN npm ci
 
 COPY . .
 RUN npx prisma generate
+RUN chmod +x start.sh
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "npx tsx prisma/create-db.ts && npx prisma db push && npx tsx prisma/seed.ts && npx tsx src/index.ts"]
+CMD ["sh", "start.sh"]
