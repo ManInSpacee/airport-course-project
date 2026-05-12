@@ -8,11 +8,15 @@ services:
       ML_SERVICE_URL: http://ai:8000
       PORT: "3000"
     restart: unless-stopped
+    networks:
+      - aerolive_net
 
   ai:
     build: ./aerolive-ai
     container_name: airport_ai
     restart: unless-stopped
+    networks:
+      - aerolive_net
 
   frontend:
     build: ./aerolive-frontend
@@ -22,3 +26,9 @@ services:
     depends_on:
       - api
     restart: unless-stopped
+    networks:
+      - aerolive_net
+
+networks:
+  aerolive_net:
+    driver: bridge
