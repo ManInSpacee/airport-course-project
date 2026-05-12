@@ -16,41 +16,159 @@ async function main() {
   const admin = await prisma.user.upsert({
     where: { email: "admin@airport.com" },
     update: {},
-    create: { username: "admin", email: "admin@airport.com", passwordHash: adminHash, role: "ADMIN" },
+    create: {
+      username: "admin",
+      email: "admin@airport.com",
+      passwordHash: adminHash,
+      role: "ADMIN",
+    },
   });
 
   const dispHash = await bcrypt.hash("disp123", 10);
   const dispatcher = await prisma.user.upsert({
     where: { email: "dispatcher@airport.com" },
     update: {},
-    create: { username: "dispatcher", email: "dispatcher@airport.com", passwordHash: dispHash, role: "DISPATCHER" },
+    create: {
+      username: "dispatcher",
+      email: "dispatcher@airport.com",
+      passwordHash: dispHash,
+      role: "DISPATCHER",
+    },
   });
 
   // --- Гейты ---
   const [gA1, gA2, gB1, gB2, gC1] = await Promise.all([
-    prisma.gate.upsert({ where: { name: "A1" }, update: {}, create: { name: "A1", terminal: "A" } }),
-    prisma.gate.upsert({ where: { name: "A2" }, update: {}, create: { name: "A2", terminal: "A" } }),
-    prisma.gate.upsert({ where: { name: "B1" }, update: {}, create: { name: "B1", terminal: "B" } }),
-    prisma.gate.upsert({ where: { name: "B2" }, update: {}, create: { name: "B2", terminal: "B" } }),
-    prisma.gate.upsert({ where: { name: "C1" }, update: {}, create: { name: "C1", terminal: "C" } }),
+    prisma.gate.upsert({
+      where: { name: "A1" },
+      update: {},
+      create: { name: "A1", terminal: "A" },
+    }),
+    prisma.gate.upsert({
+      where: { name: "A2" },
+      update: {},
+      create: { name: "A2", terminal: "A" },
+    }),
+    prisma.gate.upsert({
+      where: { name: "B1" },
+      update: {},
+      create: { name: "B1", terminal: "B" },
+    }),
+    prisma.gate.upsert({
+      where: { name: "B2" },
+      update: {},
+      create: { name: "B2", terminal: "B" },
+    }),
+    prisma.gate.upsert({
+      where: { name: "C1" },
+      update: {},
+      create: { name: "C1", terminal: "C" },
+    }),
   ]);
 
   // --- Исторические рейсы (30 дней назад) для маршрутов с высоким риском ---
   // Москва → Сочи — проблемный маршрут, много задержек
   const historicalFlights = [
-    { fn: "H-001", from: "Москва", to: "Сочи", dep: daysAgo(28), arr: daysAgo(28), gate: gB1.id, status: "DELAYED" },
-    { fn: "H-002", from: "Москва", to: "Сочи", dep: daysAgo(25), arr: daysAgo(25), gate: gB1.id, status: "DELAYED" },
-    { fn: "H-003", from: "Москва", to: "Сочи", dep: daysAgo(21), arr: daysAgo(21), gate: gB2.id, status: "CANCELLED" },
-    { fn: "H-004", from: "Москва", to: "Сочи", dep: daysAgo(18), arr: daysAgo(18), gate: gB1.id, status: "DELAYED" },
-    { fn: "H-005", from: "Москва", to: "Сочи", dep: daysAgo(14), arr: daysAgo(14), gate: gB2.id, status: "DELAYED" },
-    { fn: "H-006", from: "Москва", to: "Сочи", dep: daysAgo(10), arr: daysAgo(10), gate: gB1.id, status: "CANCELLED" },
-    { fn: "H-007", from: "Москва", to: "Сочи", dep: daysAgo(7),  arr: daysAgo(7),  gate: gB2.id, status: "DELAYED" },
+    {
+      fn: "H-001",
+      from: "Москва",
+      to: "Сочи",
+      dep: daysAgo(28),
+      arr: daysAgo(28),
+      gate: gB1.id,
+      status: "DELAYED",
+    },
+    {
+      fn: "H-002",
+      from: "Москва",
+      to: "Сочи",
+      dep: daysAgo(25),
+      arr: daysAgo(25),
+      gate: gB1.id,
+      status: "DELAYED",
+    },
+    {
+      fn: "H-003",
+      from: "Москва",
+      to: "Сочи",
+      dep: daysAgo(21),
+      arr: daysAgo(21),
+      gate: gB2.id,
+      status: "CANCELLED",
+    },
+    {
+      fn: "H-004",
+      from: "Москва",
+      to: "Сочи",
+      dep: daysAgo(18),
+      arr: daysAgo(18),
+      gate: gB1.id,
+      status: "DELAYED",
+    },
+    {
+      fn: "H-005",
+      from: "Москва",
+      to: "Сочи",
+      dep: daysAgo(14),
+      arr: daysAgo(14),
+      gate: gB2.id,
+      status: "DELAYED",
+    },
+    {
+      fn: "H-006",
+      from: "Москва",
+      to: "Сочи",
+      dep: daysAgo(10),
+      arr: daysAgo(10),
+      gate: gB1.id,
+      status: "CANCELLED",
+    },
+    {
+      fn: "H-007",
+      from: "Москва",
+      to: "Сочи",
+      dep: daysAgo(7),
+      arr: daysAgo(7),
+      gate: gB2.id,
+      status: "DELAYED",
+    },
     // Казань → Новосибирск — средний риск, пара задержек
-    { fn: "H-010", from: "Казань", to: "Новосибирск", dep: daysAgo(20), arr: daysAgo(20), gate: gA2.id, status: "DELAYED" },
-    { fn: "H-011", from: "Казань", to: "Новосибирск", dep: daysAgo(10), arr: daysAgo(10), gate: gA2.id, status: "ARRIVED" },
+    {
+      fn: "H-010",
+      from: "Казань",
+      to: "Новосибирск",
+      dep: daysAgo(20),
+      arr: daysAgo(20),
+      gate: gA2.id,
+      status: "DELAYED",
+    },
+    {
+      fn: "H-011",
+      from: "Казань",
+      to: "Новосибирск",
+      dep: daysAgo(10),
+      arr: daysAgo(10),
+      gate: gA2.id,
+      status: "ARRIVED",
+    },
     // Москва → Санкт-Петербург — чистый маршрут, задержек нет
-    { fn: "H-020", from: "Москва", to: "Санкт-Петербург", dep: daysAgo(15), arr: daysAgo(15), gate: gA1.id, status: "ARRIVED" },
-    { fn: "H-021", from: "Москва", to: "Санкт-Петербург", dep: daysAgo(8),  arr: daysAgo(8),  gate: gA1.id, status: "ARRIVED" },
+    {
+      fn: "H-020",
+      from: "Москва",
+      to: "Санкт-Петербург",
+      dep: daysAgo(15),
+      arr: daysAgo(15),
+      gate: gA1.id,
+      status: "ARRIVED",
+    },
+    {
+      fn: "H-021",
+      from: "Москва",
+      to: "Санкт-Петербург",
+      dep: daysAgo(8),
+      arr: daysAgo(8),
+      gate: gA1.id,
+      status: "ARRIVED",
+    },
   ];
 
   for (const f of historicalFlights) {
@@ -186,15 +304,6 @@ async function main() {
       createdById: dispatcher.id,
     },
   });
-
-  console.log("Seed выполнен");
-  console.log("Admin:      admin@airport.com / admin123");
-  console.log("Dispatcher: dispatcher@airport.com / disp123");
-  console.log("");
-  console.log("Рейсы для демонстрации AI:");
-  console.log("  SU-101 (Москва→Питер, гейт A1) — низкий риск");
-  console.log("  U6-205 (Казань→Новосибирск, гейт A2) — средний риск");
-  console.log("  DP-301 (Москва→Сочи, гейт B1, ночь) — высокий риск");
 }
 
 main()

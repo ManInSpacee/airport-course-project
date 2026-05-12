@@ -3,40 +3,10 @@ import { prisma } from '../lib/prisma'
 import { authenticate } from '../middleware/auth'
 import { requireRole } from '../middleware/requireRole'
 import { logAction } from '../utils/audit'
+import { validateFlightBody } from '../utils/validateFlight'
 
 const router = Router()
 const VALID_STATUSES = ['SCHEDULED', 'BOARDING', 'DEPARTED', 'ARRIVED', 'DELAYED', 'CANCELLED']
-const MAX_YEAR = new Date().getFullYear() + 1
-
-function validateFlightBody(body: any): string | null {
-  const { flight_number, origin, destination, departure_time, arrival_time } = body
-
-  if (!flight_number || !origin || !destination || !departure_time || !arrival_time)
-    return 'Заполните все обязательные поля'
-
-  if (!/^[A-Z0-9]{1,3}-\d{1,4}$/.test(String(flight_number).trim()))
-    return 'Номер рейса: формат XX-NNN (например SU-101, U6-205)'
-
-  if (String(origin).trim().length < 2 || String(origin).trim().length > 100)
-    return 'Откуда: от 2 до 100 символов'
-
-  if (String(destination).trim().length < 2 || String(destination).trim().length > 100)
-    return 'Куда: от 2 до 100 символов'
-
-  if (String(origin).trim().toLowerCase() === String(destination).trim().toLowerCase())
-    return 'Откуда и куда не могут совпадать'
-
-  const dep = new Date(departure_time)
-  const arr = new Date(arrival_time)
-
-  if (isNaN(dep.getTime())) return 'Некорректная дата вылета'
-  if (isNaN(arr.getTime())) return 'Некорректная дата прилёта'
-  if (dep.getFullYear() > MAX_YEAR) return `Год вылета не может быть позднее ${MAX_YEAR}`
-  if (arr.getFullYear() > MAX_YEAR) return `Год прилёта не может быть позднее ${MAX_YEAR}`
-  if (arr <= dep) return 'Время прилёта должно быть позже времени вылета'
-
-  return null
-}
 
 /**
  * @swagger
@@ -162,6 +132,22 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
  *       409:
  *         description: Конфликт гейта
  */
+const GATE_BUFFER_MS = 45 * 60 * 1000
+
+async function checkGateConflict(gate_id: number, dep: Date, arr: Date, excludeFlightId?: number) {
+  const depWithBuffer = new Date(dep.getTime() - GATE_BUFFER_MS)
+  const arrWithBuffer = new Date(arr.getTime() + GATE_BUFFER_MS)
+  return prisma.flight.findFirst({
+    where: {
+      gateId: gate_id,
+      status: { notIn: ['CANCELLED', 'DEPARTED', 'ARRIVED'] },
+      departureTime: { lt: arrWithBuffer },
+      arrivalTime: { gt: depWithBuffer },
+      ...(excludeFlightId ? { id: { not: excludeFlightId } } : {})
+    }
+  })
+}
+
 router.post('/', authenticate, async (req: Request, res: Response) => {
   const { flight_number, origin, destination, departure_time, arrival_time, gate_id } = req.body
 
@@ -169,20 +155,10 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
   if (validationError) return res.status(400).json({ error: validationError })
 
   if (gate_id) {
-    const dep = new Date(departure_time)
-    const arr = new Date(arrival_time)
-    const conflict = await prisma.flight.findFirst({
-      where: {
-        gateId: Number(gate_id),
-        status: { notIn: ['CANCELLED', 'DEPARTED', 'ARRIVED'] },
-        departureTime: { lte: arr },
-        arrivalTime: { gte: dep }
-      }
-    })
+    const conflict = await checkGateConflict(Number(gate_id), new Date(departure_time), new Date(arrival_time))
     if (conflict) {
       return res.status(409).json({
-        error: 'Конфликт гейта',
-        conflict: `Рейс ${conflict.flightNumber} уже занимает этот гейт в указанное время`
+        error: `Гейт занят: рейс ${conflict.flightNumber} уже назначен на это время`
       })
     }
   }
@@ -252,6 +228,15 @@ router.put('/:id', authenticate, async (req: Request, res: Response) => {
 
   const validationError = validateFlightBody(req.body)
   if (validationError) return res.status(400).json({ error: validationError })
+
+  if (gate_id) {
+    const conflict = await checkGateConflict(Number(gate_id), new Date(departure_time), new Date(arrival_time), Number(req.params.id))
+    if (conflict) {
+      return res.status(409).json({
+        error: `Гейт занят: рейс ${conflict.flightNumber} уже назначен на это время`
+      })
+    }
+  }
 
   try {
     const flight = await prisma.flight.update({

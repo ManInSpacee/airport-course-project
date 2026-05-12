@@ -55,6 +55,20 @@ enum FlightStatus {
   CANCELLED
 }
 
+model FlightHistory {
+  id                Int     @id @default(autoincrement())
+  month             Int
+  day               Int
+  dayOfWeek         Int     @map("day_of_week")
+  departureTime     Int?    @map("departure_time")
+  arrivalDelay      Float?  @map("arrival_delay")
+  cancelled         Int
+  originAirport     String  @map("origin_airport")
+  destinationAirport String @map("destination_airport")
+
+  @@map("flight_history")
+}
+
 model AuditLog {
   id         Int      @id @default(autoincrement())
   userId     Int      @map("user_id")
