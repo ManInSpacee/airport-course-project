@@ -17,6 +17,7 @@ aerolive-backend/generated/
 # Env
 .env
 .env.local
+aerolive-backend/.env
 
 # Build
 frontend/dist/
