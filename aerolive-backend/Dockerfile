@@ -7,7 +7,7 @@ RUN npm ci
 
 COPY . .
 RUN npx prisma generate
-RUN chmod +x start.sh
+RUN sed -i 's/\r//' start.sh && chmod +x start.sh
 
 EXPOSE 3000
 
