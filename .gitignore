@@ -9,7 +9,7 @@ __pycache__/
 *.pyo
 .venv/
 venv/
-aerolive-ai/model.joblib
+# aerolive-ai/model.joblib — tracked intentionally (no DB at build time)
 
 # Prisma generated
 aerolive-backend/generated/
