@@ -6,8 +6,13 @@ dist/
 __pycache__/
 *.pyc
 *.pyo
+*.pyo
 .venv/
 venv/
+aerolive-ai/model.joblib
+
+# Prisma generated
+aerolive-backend/generated/
 
 # Env
 .env
@@ -21,10 +26,12 @@ node_api/dist/
 .vscode/
 .idea/
 *.swp
+.claude/
 
 # OS
 .DS_Store
 Thumbs.db
+*.docx
 
 # Logs
 *.log
