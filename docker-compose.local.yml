@@ -23,7 +23,7 @@ services:
       JWT_SECRET: local-dev-secret
       ML_SERVICE_URL: http://ai:8000
       PORT: "3000"
-    command: sh -c "npx prisma db push && sh start.sh"
+    command: sh -c "npx prisma db push && npx tsx prisma/seed.ts && sh start.sh"
     depends_on:
       db:
         condition: service_healthy
