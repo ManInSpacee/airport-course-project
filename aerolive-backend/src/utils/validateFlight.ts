@@ -1,4 +1,5 @@
 const MAX_YEAR = new Date().getFullYear() + 1
+const HOME_AIRPORT = 'Москва (SVO)'
 
 export function validateFlightBody(body: any): string | null {
   const { flight_number, origin, destination, departure_time, arrival_time } = body
@@ -17,6 +18,9 @@ export function validateFlightBody(body: any): string | null {
 
   if (String(origin).trim().toLowerCase() === String(destination).trim().toLowerCase())
     return 'Откуда и куда не могут совпадать'
+
+  if (String(origin).trim() !== HOME_AIRPORT && String(destination).trim() !== HOME_AIRPORT)
+    return `Один из пунктов маршрута должен быть ${HOME_AIRPORT}`
 
   const dep = new Date(departure_time)
   const arr = new Date(arrival_time)
