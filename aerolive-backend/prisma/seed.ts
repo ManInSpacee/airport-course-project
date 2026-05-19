@@ -10,7 +10,6 @@ function hoursFromNow(h: number) {
   return new Date(Date.now() + h * 3600000);
 }
 
-// Реальные авиакомпании, базирующиеся в Москве (SVO/DME/VKO)
 const AIRLINES = {
   SU: { name: "Аэрофлот", aircraft: ["Airbus A320", "Airbus A321", "Boeing 737-800", "Airbus A330-300"] },
   U6: { name: "Уральские авиалинии", aircraft: ["Airbus A320", "Airbus A321"] },
@@ -67,15 +66,12 @@ async function main() {
   // --- 4. Историческая база рейсов из/в Москву (последние 30 дней) ---
   // Эти данные нужны для ML — модель учится по истории задержек на маршрутах
   const historicalRoutes: Array<{ from: string; to: string; airline: keyof typeof AIRLINES; delays: number; ok: number }> = [
-    // Проблемные направления — много задержек
     { from: "Москва (SVO)", to: "Сочи (AER)", airline: "SU", delays: 5, ok: 3 },
     { from: "Москва (SVO)", to: "Сочи (AER)", airline: "DP", delays: 4, ok: 2 },
     { from: "Москва (VKO)", to: "Минеральные Воды (MRV)", airline: "DP", delays: 3, ok: 1 },
-    // Средний риск
     { from: "Москва (SVO)", to: "Казань (KZN)", airline: "SU", delays: 2, ok: 5 },
     { from: "Москва (DME)", to: "Новосибирск (OVB)", airline: "S7", delays: 2, ok: 4 },
     { from: "Москва (SVO)", to: "Екатеринбург (SVX)", airline: "U6", delays: 1, ok: 3 },
-    // Чистые маршруты
     { from: "Москва (SVO)", to: "Санкт-Петербург (LED)", airline: "SU", delays: 0, ok: 8 },
     { from: "Москва (DME)", to: "Санкт-Петербург (LED)", airline: "S7", delays: 0, ok: 5 },
     { from: "Москва (SVO)", to: "Калининград (KGD)", airline: "SU", delays: 0, ok: 4 },
@@ -149,7 +145,6 @@ async function main() {
       number: "DP-411", from: "Москва (VKO)", to: "Краснодар (KRR)", airline: "DP" as const,
       dep: 1.5, arr: 4, gate: "B2", status: "SCHEDULED" as const,
     },
-    // Разные
     {
       number: "N4-538", from: "Москва (SVO)", to: "Анталья (AYT)", airline: "N4" as const,
       dep: 6, arr: 10.5, gate: "D1", status: "SCHEDULED" as const,

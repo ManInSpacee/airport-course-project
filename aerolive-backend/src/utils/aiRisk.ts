@@ -38,7 +38,6 @@ export async function calculateDelayRisk(flightId: number) {
     }
   })
 
-  // Собираем признаки и отправляем в ML сервис
   const features = {
     hour: departureTime.getUTCHours(),
     is_weekend: [0, 6].includes(departureTime.getUTCDay()) ? 1 : 0,

@@ -81,7 +81,6 @@ export function FlightFormPage() {
   function handleAirlineChange(code: string) {
     setAirlineCode(code)
     setAircraftModel('')
-    // Автозаполнение номера рейса префиксом
     if (code && !flightNumber) {
       setFlightNumber(code + '-')
     }
@@ -173,7 +172,6 @@ export function FlightFormPage() {
 
       <form onSubmit={handleSubmit} style={{ maxWidth: 520 }}>
 
-        {/* Авиакомпания */}
         <h3 style={{ marginBottom: 8 }}>{t('flights.airline')}</h3>
         <div className="row">
           <div className="form-row">
@@ -195,7 +193,6 @@ export function FlightFormPage() {
           </div>
         </div>
 
-        {/* Воздушное судно */}
         <h3 style={{ marginTop: 16, marginBottom: 8 }}>{t('flights.aircraft')}</h3>
         <div className="row">
           <div className="form-row">
@@ -217,7 +214,6 @@ export function FlightFormPage() {
           </div>
         </div>
 
-        {/* Маршрут */}
         <h3 style={{ marginTop: 16, marginBottom: 4 }}>Маршрут</h3>
         <div className="hint" style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>
           Один из пунктов маршрута — всегда {HOME_AIRPORT}
@@ -245,7 +241,6 @@ export function FlightFormPage() {
           </div>
         </div>
 
-        {/* Времена */}
         <div className="row" style={{ marginTop: 8 }}>
           <div className="form-row">
             <label className="lbl">{t('flights.departureLabel')} *</label>
@@ -261,7 +256,6 @@ export function FlightFormPage() {
           </div>
         </div>
 
-        {/* Гейт */}
         <div className="form-row" style={{ marginTop: 8 }}>
           <label className="lbl">{t('flights.gate')}</label>
           <select className="ctl" value={gateId} onChange={e => setGateId(e.target.value)}>
