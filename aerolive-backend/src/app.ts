@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import 'express-async-errors'
 import express from 'express'
+import cors from 'cors'
 import swaggerUi from 'swagger-ui-express'
 import swaggerJsdoc from 'swagger-jsdoc'
 
@@ -12,6 +13,7 @@ import aiRoutes from './routes/ai'
 import auditRoutes from './routes/audit'
 
 const app = express()
+app.use(cors())
 app.use(express.json())
 
 const swaggerSpec = swaggerJsdoc({
