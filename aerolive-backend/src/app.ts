@@ -1,45 +1,45 @@
-import 'dotenv/config'
-import 'express-async-errors'
-import express from 'express'
-import cors from 'cors'
-import swaggerUi from 'swagger-ui-express'
-import swaggerJsdoc from 'swagger-jsdoc'
+import "dotenv/config";
+import "express-async-errors";
+import express from "express";
+import cors from "cors";
+import swaggerUi from "swagger-ui-express";
+import swaggerJsdoc from "swagger-jsdoc";
 
-import authRoutes from './routes/auth'
-import flightRoutes from './routes/flights'
-import gateRoutes from './routes/gates'
-import userRoutes from './routes/users'
-import aiRoutes from './routes/ai'
-import auditRoutes from './routes/audit'
+import authRoutes from "./routes/auth";
+import flightRoutes from "./routes/flights";
+import gateRoutes from "./routes/gates";
+import userRoutes from "./routes/users";
+import aiRoutes from "./routes/ai";
+import auditRoutes from "./routes/audit";
 
-const app = express()
-app.use(cors())
-app.use(express.json())
+const app = express();
+app.use(cors());
+app.use(express.json());
 
 const swaggerSpec = swaggerJsdoc({
   definition: {
-    openapi: '3.0.0',
-    info: { title: 'Airport API', version: '1.0.0' },
+    openapi: "3.0.0",
+    info: { title: "Airport API", version: "1.0.0" },
     components: {
-      securitySchemes: { bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' } }
-    }
+      securitySchemes: {
+        bearerAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT" },
+      },
+    },
   },
-  apis: ['./src/routes/*.ts']
-})
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec))
+  apis: ["./src/routes/*.ts"],
+});
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-app.use('/api/auth', authRoutes)
-app.use('/api/flights', flightRoutes)
-app.use('/api/gates', gateRoutes)
-app.use('/api/users', userRoutes)
-app.use('/api/ai', aiRoutes)
-app.use('/api/audit', auditRoutes)
+app.use("/api/auth", authRoutes);
+app.use("/api/flights", flightRoutes);
+app.use("/api/gates", gateRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/ai", aiRoutes);
+app.use("/api/audit", auditRoutes);
 
-app.get('/', (req, res) => res.json({ message: 'Airport API (Node.js + TypeScript)', docs: '/docs' }))
+app.use((err: any, _req: any, res: any, _next: any) => {
+  console.error(err);
+  res.status(500).json({ error: "Внутренняя ошибка сервера" });
+});
 
-app.use((err: any, req: any, res: any, next: any) => {
-  console.error(err)
-  res.status(500).json({ error: 'Внутренняя ошибка сервера' })
-})
-
-export default app
+export default app;
