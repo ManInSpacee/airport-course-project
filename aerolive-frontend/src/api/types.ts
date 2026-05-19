@@ -26,6 +26,10 @@ export interface Flight {
   arrivalTime: string
   status: FlightStatus
   gate?: Gate | null
+  airlineName?: string | null
+  airlineCode?: string | null
+  aircraftModel?: string | null
+  aircraftRegistration?: string | null
   createdBy?: User
   createdAt: string
 }

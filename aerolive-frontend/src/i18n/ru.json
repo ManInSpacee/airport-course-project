@@ -1,0 +1,73 @@
+{
+  "common": {
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "back": "Назад",
+    "loading": "Загрузка...",
+    "saving": "Сохранение...",
+    "apply": "Применить",
+    "view": "Просмотр",
+    "all": "Все",
+    "yes": "Да",
+    "no": "Нет",
+    "actions": "Действия"
+  },
+  "nav": {
+    "flights": "Рейсы",
+    "gates": "Гейты",
+    "users": "Пользователи",
+    "audit": "Аудит",
+    "ai": "AI-прогноз",
+    "logout": "Выйти"
+  },
+  "auth": {
+    "login": "Вход",
+    "register": "Регистрация",
+    "email": "Email",
+    "password": "Пароль",
+    "username": "Имя пользователя",
+    "loginButton": "Войти",
+    "registerButton": "Зарегистрироваться",
+    "invalidCredentials": "Неверный email или пароль"
+  },
+  "flights": {
+    "title": "Рейсы",
+    "addNew": "+ Добавить рейс",
+    "newFlight": "Новый рейс",
+    "editFlight": "Редактировать рейс",
+    "number": "Номер",
+    "origin": "Откуда",
+    "destination": "Куда",
+    "departure": "Вылет",
+    "arrival": "Прилёт",
+    "gate": "Гейт",
+    "status": "Статус",
+    "airline": "Авиакомпания",
+    "airlineName": "Название авиакомпании",
+    "airlineCode": "Код авиакомпании (IATA)",
+    "aircraft": "Воздушное судно",
+    "aircraftModel": "Модель судна",
+    "aircraftRegistration": "Бортовой номер",
+    "notAssigned": "— Не назначен —",
+    "notFound": "Рейсов не найдено",
+    "changeFilters": "Измените фильтры или создайте новый рейс",
+    "confirmDelete": "Вы уверены, что хотите удалить рейс",
+    "departureLabel": "Дата и время вылета",
+    "arrivalLabel": "Дата и время прилёта",
+    "required": "Обязательное поле",
+    "changeStatus": "Изменить статус",
+    "currentStatus": "Текущий статус",
+    "newStatus": "Новый статус",
+    "deleteTitle": "Удалить рейс"
+  },
+  "status": {
+    "SCHEDULED": "По расписанию",
+    "BOARDING": "Посадка",
+    "DEPARTED": "Вылетел",
+    "ARRIVED": "Прибыл",
+    "DELAYED": "Задержан",
+    "CANCELLED": "Отменён"
+  }
+}

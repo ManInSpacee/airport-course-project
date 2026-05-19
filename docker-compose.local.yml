@@ -18,6 +18,8 @@ services:
   api:
     build: ./aerolive-backend
     container_name: airport_api
+    ports:
+      - "3000:3000"
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/airport
       JWT_SECRET: local-dev-secret
@@ -32,10 +34,15 @@ services:
   ai:
     build: ./aerolive-ai
     container_name: airport_ai
+    ports:
+      - "8000:8000"
     restart: unless-stopped
 
   frontend:
-    build: ./aerolive-frontend
+    build:
+      context: ./aerolive-frontend
+      args:
+        VITE_API_URL: http://localhost:3000
     container_name: airport_frontend
     ports:
       - "3080:80"

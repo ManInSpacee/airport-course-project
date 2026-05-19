@@ -10,302 +10,185 @@ function hoursFromNow(h: number) {
   return new Date(Date.now() + h * 3600000);
 }
 
+// Реальные авиакомпании, базирующиеся в Москве (SVO/DME/VKO)
+const AIRLINES = {
+  SU: { name: "Аэрофлот", aircraft: ["Airbus A320", "Airbus A321", "Boeing 737-800", "Airbus A330-300"] },
+  U6: { name: "Уральские авиалинии", aircraft: ["Airbus A320", "Airbus A321"] },
+  DP: { name: "Победа", aircraft: ["Boeing 737-800"] },
+  S7: { name: "S7 Airlines", aircraft: ["Airbus A320neo", "Embraer E170"] },
+  N4: { name: "Nordwind Airlines", aircraft: ["Boeing 737-800", "Airbus A321"] },
+};
+
+function tail() {
+  return "RA-" + (Math.floor(Math.random() * 90000) + 10000);
+}
+
 async function main() {
-  // --- Пользователи ---
+  // --- 1. Полная очистка операционных данных ---
+  console.log("Очищаю операционные данные...");
+  await prisma.auditLog.deleteMany();
+  await prisma.flight.deleteMany();
+  await prisma.flightHistory.deleteMany();
+
+  // --- 2. Пользователи (upsert — не теряем логины) ---
   const adminHash = await bcrypt.hash("admin123", 10);
   const admin = await prisma.user.upsert({
     where: { email: "admin@airport.com" },
     update: {},
-    create: {
-      username: "admin",
-      email: "admin@airport.com",
-      passwordHash: adminHash,
-      role: "ADMIN",
-    },
+    create: { username: "admin", email: "admin@airport.com", passwordHash: adminHash, role: "ADMIN" },
   });
 
   const dispHash = await bcrypt.hash("disp123", 10);
   const dispatcher = await prisma.user.upsert({
     where: { email: "dispatcher@airport.com" },
     update: {},
-    create: {
-      username: "dispatcher",
-      email: "dispatcher@airport.com",
-      passwordHash: dispHash,
-      role: "DISPATCHER",
-    },
+    create: { username: "dispatcher", email: "dispatcher@airport.com", passwordHash: dispHash, role: "DISPATCHER" },
   });
 
-  // --- Гейты ---
-  const [gA1, gA2, gB1, gB2, gC1] = await Promise.all([
-    prisma.gate.upsert({
-      where: { name: "A1" },
-      update: {},
-      create: { name: "A1", terminal: "A" },
-    }),
-    prisma.gate.upsert({
-      where: { name: "A2" },
-      update: {},
-      create: { name: "A2", terminal: "A" },
-    }),
-    prisma.gate.upsert({
-      where: { name: "B1" },
-      update: {},
-      create: { name: "B1", terminal: "B" },
-    }),
-    prisma.gate.upsert({
-      where: { name: "B2" },
-      update: {},
-      create: { name: "B2", terminal: "B" },
-    }),
-    prisma.gate.upsert({
-      where: { name: "C1" },
-      update: {},
-      create: { name: "C1", terminal: "C" },
-    }),
-  ]);
+  // --- 3. Гейты ---
+  const gateNames = [
+    ["A1", "A"], ["A2", "A"], ["A3", "A"],
+    ["B1", "B"], ["B2", "B"], ["B3", "B"],
+    ["C1", "C"], ["C2", "C"],
+    ["D1", "D"], ["D2", "D"],
+  ] as const;
 
-  // --- Исторические рейсы (30 дней назад) для маршрутов с высоким риском ---
-  // Москва → Сочи — проблемный маршрут, много задержек
-  const historicalFlights = [
+  const gates = await Promise.all(
+    gateNames.map(([name, terminal]) =>
+      prisma.gate.upsert({
+        where: { name },
+        update: { terminal },
+        create: { name, terminal },
+      })
+    )
+  );
+  const g = Object.fromEntries(gates.map(x => [x.name, x.id]));
+
+  // --- 4. Историческая база рейсов из/в Москву (последние 30 дней) ---
+  // Эти данные нужны для ML — модель учится по истории задержек на маршрутах
+  const historicalRoutes: Array<{ from: string; to: string; airline: keyof typeof AIRLINES; delays: number; ok: number }> = [
+    // Проблемные направления — много задержек
+    { from: "Москва (SVO)", to: "Сочи (AER)", airline: "SU", delays: 5, ok: 3 },
+    { from: "Москва (SVO)", to: "Сочи (AER)", airline: "DP", delays: 4, ok: 2 },
+    { from: "Москва (VKO)", to: "Минеральные Воды (MRV)", airline: "DP", delays: 3, ok: 1 },
+    // Средний риск
+    { from: "Москва (SVO)", to: "Казань (KZN)", airline: "SU", delays: 2, ok: 5 },
+    { from: "Москва (DME)", to: "Новосибирск (OVB)", airline: "S7", delays: 2, ok: 4 },
+    { from: "Москва (SVO)", to: "Екатеринбург (SVX)", airline: "U6", delays: 1, ok: 3 },
+    // Чистые маршруты
+    { from: "Москва (SVO)", to: "Санкт-Петербург (LED)", airline: "SU", delays: 0, ok: 8 },
+    { from: "Москва (DME)", to: "Санкт-Петербург (LED)", airline: "S7", delays: 0, ok: 5 },
+    { from: "Москва (SVO)", to: "Калининград (KGD)", airline: "SU", delays: 0, ok: 4 },
+  ];
+
+  let histCounter = 1;
+  for (const route of historicalRoutes) {
+    const total = route.delays + route.ok;
+    for (let i = 0; i < total; i++) {
+      const isDelayed = i < route.delays;
+      const ago = Math.floor(Math.random() * 29) + 1; // 1-29 дней назад
+      const dep = daysAgo(ago);
+      dep.setHours(6 + Math.floor(Math.random() * 16)); // 06:00-22:00
+      const arr = new Date(dep.getTime() + (1.5 + Math.random() * 3) * 3600000);
+      const airline = AIRLINES[route.airline];
+      const flightNumber = `H-${String(histCounter++).padStart(3, "0")}`;
+
+      await prisma.flight.create({
+        data: {
+          flightNumber,
+          origin: route.from,
+          destination: route.to,
+          departureTime: dep,
+          arrivalTime: arr,
+          status: isDelayed ? (Math.random() > 0.7 ? "CANCELLED" : "DELAYED") : "ARRIVED",
+          airlineName: airline.name,
+          airlineCode: route.airline,
+          aircraftModel: airline.aircraft[Math.floor(Math.random() * airline.aircraft.length)],
+          aircraftRegistration: tail(),
+          createdById: admin.id,
+        },
+      });
+    }
+  }
+
+  // --- 5. Текущие рейсы (актуальное расписание) ---
+  const currentFlights = [
+    // НИЗКИЙ РИСК: дневной рейс на чистом маршруте
     {
-      fn: "H-001",
-      from: "Москва",
-      to: "Сочи",
-      dep: daysAgo(28),
-      arr: daysAgo(28),
-      gate: gB1.id,
-      status: "DELAYED",
+      number: "SU-006", from: "Москва (SVO)", to: "Санкт-Петербург (LED)", airline: "SU" as const,
+      dep: 10, arr: 11.5, gate: "A1", status: "SCHEDULED" as const,
     },
     {
-      fn: "H-002",
-      from: "Москва",
-      to: "Сочи",
-      dep: daysAgo(25),
-      arr: daysAgo(25),
-      gate: gB1.id,
-      status: "DELAYED",
+      number: "SU-012", from: "Москва (SVO)", to: "Калининград (KGD)", airline: "SU" as const,
+      dep: 8, arr: 10.5, gate: "A2", status: "SCHEDULED" as const,
+    },
+    // СРЕДНИЙ РИСК: вечер + умеренная история задержек
+    {
+      number: "S7-1015", from: "Москва (DME)", to: "Новосибирск (OVB)", airline: "S7" as const,
+      dep: 5, arr: 9, gate: "B1", status: "SCHEDULED" as const,
     },
     {
-      fn: "H-003",
-      from: "Москва",
-      to: "Сочи",
-      dep: daysAgo(21),
-      arr: daysAgo(21),
-      gate: gB2.id,
-      status: "CANCELLED",
+      number: "U6-126", from: "Москва (SVO)", to: "Екатеринбург (SVX)", airline: "U6" as const,
+      dep: 3, arr: 5.5, gate: "C1", status: "SCHEDULED" as const,
+    },
+    // Соседи U6-126 на C1 — нагрузка гейта
+    {
+      number: "U6-128", from: "Москва (SVO)", to: "Уфа (UFA)", airline: "U6" as const,
+      dep: 2, arr: 4, gate: "C1", status: "BOARDING" as const,
+    },
+    // ВЫСОКИЙ РИСК: ночной + проблемный маршрут + перегруженный гейт
+    {
+      number: "DP-407", from: "Москва (VKO)", to: "Сочи (AER)", airline: "DP" as const,
+      dep: 1, arr: 3.5, gate: "B2", status: "DELAYED" as const,
     },
     {
-      fn: "H-004",
-      from: "Москва",
-      to: "Сочи",
-      dep: daysAgo(18),
-      arr: daysAgo(18),
-      gate: gB1.id,
-      status: "DELAYED",
+      number: "DP-409", from: "Москва (VKO)", to: "Минеральные Воды (MRV)", airline: "DP" as const,
+      dep: 0.5, arr: 3, gate: "B2", status: "BOARDING" as const,
     },
     {
-      fn: "H-005",
-      from: "Москва",
-      to: "Сочи",
-      dep: daysAgo(14),
-      arr: daysAgo(14),
-      gate: gB2.id,
-      status: "DELAYED",
+      number: "DP-411", from: "Москва (VKO)", to: "Краснодар (KRR)", airline: "DP" as const,
+      dep: 1.5, arr: 4, gate: "B2", status: "SCHEDULED" as const,
+    },
+    // Разные
+    {
+      number: "N4-538", from: "Москва (SVO)", to: "Анталья (AYT)", airline: "N4" as const,
+      dep: 6, arr: 10.5, gate: "D1", status: "SCHEDULED" as const,
     },
     {
-      fn: "H-006",
-      from: "Москва",
-      to: "Сочи",
-      dep: daysAgo(10),
-      arr: daysAgo(10),
-      gate: gB1.id,
-      status: "CANCELLED",
-    },
-    {
-      fn: "H-007",
-      from: "Москва",
-      to: "Сочи",
-      dep: daysAgo(7),
-      arr: daysAgo(7),
-      gate: gB2.id,
-      status: "DELAYED",
-    },
-    // Казань → Новосибирск — средний риск, пара задержек
-    {
-      fn: "H-010",
-      from: "Казань",
-      to: "Новосибирск",
-      dep: daysAgo(20),
-      arr: daysAgo(20),
-      gate: gA2.id,
-      status: "DELAYED",
-    },
-    {
-      fn: "H-011",
-      from: "Казань",
-      to: "Новосибирск",
-      dep: daysAgo(10),
-      arr: daysAgo(10),
-      gate: gA2.id,
-      status: "ARRIVED",
-    },
-    // Москва → Санкт-Петербург — чистый маршрут, задержек нет
-    {
-      fn: "H-020",
-      from: "Москва",
-      to: "Санкт-Петербург",
-      dep: daysAgo(15),
-      arr: daysAgo(15),
-      gate: gA1.id,
-      status: "ARRIVED",
-    },
-    {
-      fn: "H-021",
-      from: "Москва",
-      to: "Санкт-Петербург",
-      dep: daysAgo(8),
-      arr: daysAgo(8),
-      gate: gA1.id,
-      status: "ARRIVED",
+      number: "SU-1404", from: "Москва (SVO)", to: "Казань (KZN)", airline: "SU" as const,
+      dep: 4, arr: 5.5, gate: "A3", status: "SCHEDULED" as const,
     },
   ];
 
-  for (const f of historicalFlights) {
-    const arr = new Date(f.arr.getTime() + 2 * 3600000);
-    await prisma.flight.upsert({
-      where: { flightNumber: f.fn },
-      update: {},
-      create: {
-        flightNumber: f.fn,
+  for (const f of currentFlights) {
+    const airline = AIRLINES[f.airline];
+    const isNight = f.number.startsWith("DP-40");
+    let depTime = hoursFromNow(f.dep);
+    if (isNight) depTime.setHours(2 + (depTime.getHours() % 3));
+
+    await prisma.flight.create({
+      data: {
+        flightNumber: f.number,
         origin: f.from,
         destination: f.to,
-        departureTime: f.dep,
-        arrivalTime: arr,
-        gateId: f.gate,
-        status: f.status as any,
-        createdById: admin.id,
+        departureTime: depTime,
+        arrivalTime: new Date(depTime.getTime() + (f.arr - f.dep) * 3600000),
+        gateId: g[f.gate],
+        status: f.status,
+        airlineName: airline.name,
+        airlineCode: f.airline,
+        aircraftModel: airline.aircraft[Math.floor(Math.random() * airline.aircraft.length)],
+        aircraftRegistration: tail(),
+        createdById: f.number.startsWith("SU") ? admin.id : dispatcher.id,
       },
     });
   }
 
-  // --- Текущие рейсы для демонстрации AI ---
-
-  // НИЗКИЙ РИСК: дневной рейс, чистый маршрут, свободный гейт
-  await prisma.flight.upsert({
-    where: { flightNumber: "SU-101" },
-    update: {},
-    create: {
-      flightNumber: "SU-101",
-      origin: "Москва",
-      destination: "Санкт-Петербург",
-      departureTime: hoursFromNow(10), // дневное время
-      arrivalTime: hoursFromNow(11.5),
-      gateId: gA1.id,
-      status: "SCHEDULED",
-      createdById: admin.id,
-    },
-  });
-
-  // СРЕДНИЙ РИСК: вечерний рейс, пара задержек в истории, гейт слегка занят
-  await prisma.flight.upsert({
-    where: { flightNumber: "U6-205" },
-    update: {},
-    create: {
-      flightNumber: "U6-205",
-      origin: "Казань",
-      destination: "Новосибирск",
-      departureTime: hoursFromNow(3),
-      arrivalTime: hoursFromNow(7),
-      gateId: gA2.id,
-      status: "SCHEDULED",
-      createdById: dispatcher.id,
-    },
-  });
-
-  // Соседний рейс на том же гейте A2 — создаёт нагрузку для U6-205
-  await prisma.flight.upsert({
-    where: { flightNumber: "U6-206" },
-    update: {},
-    create: {
-      flightNumber: "U6-206",
-      origin: "Казань",
-      destination: "Уфа",
-      departureTime: hoursFromNow(2),
-      arrivalTime: hoursFromNow(4),
-      gateId: gA2.id,
-      status: "BOARDING",
-      createdById: dispatcher.id,
-    },
-  });
-
-  // ВЫСОКИЙ РИСК: ночной рейс, очень проблемный маршрут (7 задержек за 30 дней), перегруженный гейт
-  const nightDep = hoursFromNow(1);
-  nightDep.setUTCHours(2); // 2 ночи UTC
-
-  await prisma.flight.upsert({
-    where: { flightNumber: "DP-301" },
-    update: {},
-    create: {
-      flightNumber: "DP-301",
-      origin: "Москва",
-      destination: "Сочи",
-      departureTime: nightDep,
-      arrivalTime: new Date(nightDep.getTime() + 2.5 * 3600000),
-      gateId: gB1.id,
-      status: "DELAYED",
-      createdById: dispatcher.id,
-    },
-  });
-
-  // Два соседних рейса на том же гейте B1 — максимальная нагрузка
-  await prisma.flight.upsert({
-    where: { flightNumber: "DP-302" },
-    update: {},
-    create: {
-      flightNumber: "DP-302",
-      origin: "Краснодар",
-      destination: "Сочи",
-      departureTime: new Date(nightDep.getTime() - 30 * 60000),
-      arrivalTime: new Date(nightDep.getTime() + 1.5 * 3600000),
-      gateId: gB1.id,
-      status: "BOARDING",
-      createdById: admin.id,
-    },
-  });
-
-  await prisma.flight.upsert({
-    where: { flightNumber: "DP-303" },
-    update: {},
-    create: {
-      flightNumber: "DP-303",
-      origin: "Ростов-на-Дону",
-      destination: "Москва",
-      departureTime: new Date(nightDep.getTime() - 60 * 60000),
-      arrivalTime: new Date(nightDep.getTime() + 0.5 * 3600000),
-      gateId: gB1.id,
-      status: "SCHEDULED",
-      createdById: admin.id,
-    },
-  });
-
-  // Рейс на отдельном гейте C1 — просто для разнообразия
-  await prisma.flight.upsert({
-    where: { flightNumber: "S7-401" },
-    update: {},
-    create: {
-      flightNumber: "S7-401",
-      origin: "Новосибирск",
-      destination: "Москва",
-      departureTime: hoursFromNow(6),
-      arrivalTime: hoursFromNow(10),
-      gateId: gC1.id,
-      status: "SCHEDULED",
-      createdById: dispatcher.id,
-    },
-  });
+  const total = await prisma.flight.count();
+  console.log(`✓ Создано рейсов: ${total} (исторических + текущих)`);
+  console.log(`✓ Пользователи: admin@airport.com / admin123, dispatcher@airport.com / disp123`);
 }
 
 main()
-  .catch(console.error)
+  .catch((e) => { console.error(e); process.exit(1); })
   .finally(() => prisma.$disconnect());

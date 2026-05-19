@@ -53,4 +53,89 @@ describe('POST /api/flights', () => {
     expect(res.status).toBe(400)
     expect(res.body.error).toContain('формат')
   })
+
+  it('возвращает 401 без токена', async () => {
+    const res = await request(app).post('/api/flights').send({
+      flight_number: 'SU-101',
+      origin: 'Москва',
+      destination: 'Сочи',
+      departure_time: '2026-06-01T10:00:00Z',
+      arrival_time: '2026-06-01T12:00:00Z',
+    })
+    expect(res.status).toBe(401)
+  })
+
+  it('возвращает 400 если откуда и куда совпадают', async () => {
+    const token = await getToken()
+    const res = await request(app)
+      .post('/api/flights')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        flight_number: 'SU-102',
+        origin: 'Москва',
+        destination: 'Москва',
+        departure_time: '2026-06-01T10:00:00Z',
+        arrival_time: '2026-06-01T12:00:00Z',
+      })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toContain('совпадать')
+  })
+
+  it('возвращает 400 если прилёт раньше вылета', async () => {
+    const token = await getToken()
+    const res = await request(app)
+      .post('/api/flights')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        flight_number: 'SU-103',
+        origin: 'Москва',
+        destination: 'Сочи',
+        departure_time: '2026-06-01T12:00:00Z',
+        arrival_time: '2026-06-01T10:00:00Z',
+      })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toContain('позже')
+  })
+
+  it('создаёт рейс с корректными данными', async () => {
+    const token = await getToken()
+    const number = `SU-${Math.floor(Math.random() * 9000) + 1000}`
+    const res = await request(app)
+      .post('/api/flights')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        flight_number: number,
+        origin: 'Москва',
+        destination: 'Казань',
+        departure_time: '2027-06-01T10:00:00Z',
+        arrival_time: '2027-06-01T12:00:00Z',
+      })
+    expect(res.status).toBe(201)
+    expect(res.body.flightNumber).toBe(number)
+  })
+})
+
+describe('GET /api/flights', () => {
+  it('возвращает список рейсов', async () => {
+    const token = await getToken()
+    const res = await request(app)
+      .get('/api/flights')
+      .set('Authorization', `Bearer ${token}`)
+    expect(res.status).toBe(200)
+    expect(Array.isArray(res.body)).toBe(true)
+  })
+
+  it('возвращает 401 без токена', async () => {
+    const res = await request(app).get('/api/flights')
+    expect(res.status).toBe(401)
+  })
+
+  it('поддерживает фильтрацию по статусу', async () => {
+    const token = await getToken()
+    const res = await request(app)
+      .get('/api/flights?status=SCHEDULED')
+      .set('Authorization', `Bearer ${token}`)
+    expect(res.status).toBe(200)
+    expect(Array.isArray(res.body)).toBe(true)
+  })
 })

@@ -1,0 +1,73 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "apply": "Apply",
+    "view": "View",
+    "all": "All",
+    "yes": "Yes",
+    "no": "No",
+    "actions": "Actions"
+  },
+  "nav": {
+    "flights": "Flights",
+    "gates": "Gates",
+    "users": "Users",
+    "audit": "Audit",
+    "ai": "AI Forecast",
+    "logout": "Logout"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "username": "Username",
+    "loginButton": "Sign in",
+    "registerButton": "Sign up",
+    "invalidCredentials": "Invalid email or password"
+  },
+  "flights": {
+    "title": "Flights",
+    "addNew": "+ Add flight",
+    "newFlight": "New flight",
+    "editFlight": "Edit flight",
+    "number": "Number",
+    "origin": "From",
+    "destination": "To",
+    "departure": "Departure",
+    "arrival": "Arrival",
+    "gate": "Gate",
+    "status": "Status",
+    "airline": "Airline",
+    "airlineName": "Airline name",
+    "airlineCode": "Airline code (IATA)",
+    "aircraft": "Aircraft",
+    "aircraftModel": "Aircraft model",
+    "aircraftRegistration": "Tail number",
+    "notAssigned": "— Not assigned —",
+    "notFound": "No flights found",
+    "changeFilters": "Adjust filters or create a new flight",
+    "confirmDelete": "Are you sure you want to delete flight",
+    "departureLabel": "Departure date and time",
+    "arrivalLabel": "Arrival date and time",
+    "required": "Required field",
+    "changeStatus": "Change status",
+    "currentStatus": "Current status",
+    "newStatus": "New status",
+    "deleteTitle": "Delete flight"
+  },
+  "status": {
+    "SCHEDULED": "Scheduled",
+    "BOARDING": "Boarding",
+    "DEPARTED": "Departed",
+    "ARRIVED": "Arrived",
+    "DELAYED": "Delayed",
+    "CANCELLED": "Cancelled"
+  }
+}

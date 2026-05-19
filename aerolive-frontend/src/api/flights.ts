@@ -8,6 +8,34 @@ export interface FlightFilters {
   gateId?: string;
 }
 
+export interface FlightInput {
+  flightNumber: string;
+  origin: string;
+  destination: string;
+  departureTime: string;
+  arrivalTime: string;
+  gateId?: number | null;
+  airlineName?: string | null;
+  airlineCode?: string | null;
+  aircraftModel?: string | null;
+  aircraftRegistration?: string | null;
+}
+
+function toApi(data: FlightInput) {
+  return {
+    flight_number: data.flightNumber,
+    origin: data.origin,
+    destination: data.destination,
+    departure_time: data.departureTime,
+    arrival_time: data.arrivalTime,
+    gate_id: data.gateId,
+    airline_name: data.airlineName,
+    airline_code: data.airlineCode,
+    aircraft_model: data.aircraftModel,
+    aircraft_registration: data.aircraftRegistration,
+  };
+}
+
 export const flightsApi = {
   list: (filters: FlightFilters = {}) => {
     const params = new URLSearchParams();
@@ -21,42 +49,9 @@ export const flightsApi = {
 
   get: (id: number) => api.get<Flight>(`/flights/${id}`),
 
-  create: (data: {
-    flightNumber: string;
-    origin: string;
-    destination: string;
-    departureTime: string;
-    arrivalTime: string;
-    gateId?: number | null;
-  }) =>
-    api.post<Flight>("/flights", {
-      flight_number: data.flightNumber,
-      origin: data.origin,
-      destination: data.destination,
-      departure_time: data.departureTime,
-      arrival_time: data.arrivalTime,
-      gate_id: data.gateId,
-    }),
+  create: (data: FlightInput) => api.post<Flight>("/flights", toApi(data)),
 
-  update: (
-    id: number,
-    data: {
-      flightNumber: string;
-      origin: string;
-      destination: string;
-      departureTime: string;
-      arrivalTime: string;
-      gateId?: number | null;
-    },
-  ) =>
-    api.put<Flight>(`/flights/${id}`, {
-      flight_number: data.flightNumber,
-      origin: data.origin,
-      destination: data.destination,
-      departure_time: data.departureTime,
-      arrival_time: data.arrivalTime,
-      gate_id: data.gateId,
-    }),
+  update: (id: number, data: FlightInput) => api.put<Flight>(`/flights/${id}`, toApi(data)),
 
   changeStatus: (id: number, status: FlightStatus) =>
     api.patch<Flight>(`/flights/${id}/status`, { status }),

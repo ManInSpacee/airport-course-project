@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { flightsApi, type FlightFilters } from '../api/flights'
 import { gatesApi } from '../api/gates'
 import { type Flight, type FlightStatus, type Gate } from '../api/types'
 import { Frame } from '../components/Layout/Frame'
 import { Status } from '../components/Status'
 import { Modal } from '../components/Modal'
+import { AirlineLogo } from '../components/AirlineLogo'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 
@@ -15,6 +17,8 @@ export function FlightsPage() {
   const { isAdmin } = useAuth()
   const { showToast } = useToast()
   const navigate = useNavigate()
+  const { t, i18n } = useTranslation()
+  const locale = i18n.language.startsWith('en') ? 'en-US' : 'ru-RU'
 
   const [flights, setFlights] = useState<Flight[]>([])
   const [gates, setGates] = useState<Gate[]>([])
@@ -77,73 +81,79 @@ export function FlightsPage() {
 
   function fmt(dt: string) {
     const d = new Date(dt)
-    return d.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
+    return d.toLocaleString(locale, { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
   }
 
   return (
     <Frame>
-      <h1 className="page-title">Рейсы</h1>
+      <h1 className="page-title">{t('flights.title')}</h1>
 
       <div className="toolbar">
         <div>
-          <label className="lbl">Статус</label>
+          <label className="lbl">{t('flights.status')}</label>
           <select className="ctl" value={filters.status || ''} onChange={e => setFilters(f => ({ ...f, status: e.target.value || undefined }))}>
-            <option value="">Все</option>
-            {ALL_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+            <option value="">{t('common.all')}</option>
+            {ALL_STATUSES.map(s => <option key={s} value={s}>{t(`status.${s}`)}</option>)}
           </select>
         </div>
         <div>
-          <label className="lbl">Откуда</label>
+          <label className="lbl">{t('flights.origin')}</label>
           <input className="ctl" value={filters.origin || ''} placeholder="Москва"
             onChange={e => setFilters(f => ({ ...f, origin: e.target.value || undefined }))} />
         </div>
         <div>
-          <label className="lbl">Куда</label>
+          <label className="lbl">{t('flights.destination')}</label>
           <input className="ctl" value={filters.destination || ''} placeholder="Сочи"
             onChange={e => setFilters(f => ({ ...f, destination: e.target.value || undefined }))} />
         </div>
         <div>
-          <label className="lbl">Гейт</label>
+          <label className="lbl">{t('flights.gate')}</label>
           <select className="ctl" value={filters.gateId || ''} onChange={e => setFilters(f => ({ ...f, gateId: e.target.value || undefined }))}>
-            <option value="">Все</option>
+            <option value="">{t('common.all')}</option>
             {gates.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
           </select>
         </div>
         <div className="spacer" />
-        <button className="btn primary" onClick={() => navigate('/flights/new')}>+ Добавить рейс</button>
+        <button className="btn primary" onClick={() => navigate('/flights/new')}>{t('flights.addNew')}</button>
       </div>
 
       {loading ? (
         <div className="loading">Загрузка...</div>
       ) : flights.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-title">Рейсов не найдено</div>
-          <div className="empty-sub">Измените фильтры или создайте новый рейс</div>
+          <div className="empty-title">{t('flights.notFound')}</div>
+          <div className="empty-sub">{t('flights.changeFilters')}</div>
         </div>
       ) : (
         <div style={{ overflowX: 'auto' }}>
           <table className="tbl">
             <thead>
               <tr>
-                <th>Номер</th>
-                <th>Откуда</th>
-                <th>Куда</th>
-                <th>Вылет</th>
-                <th>Прилёт</th>
-                <th>Гейт</th>
-                <th>Статус</th>
-                <th>Действия</th>
+                <th>{t('flights.airline')}</th>
+                <th>{t('flights.number')}</th>
+                <th>{t('flights.origin')}</th>
+                <th>{t('flights.destination')}</th>
+                <th>{t('flights.departure')}</th>
+                <th>{t('flights.arrival')}</th>
+                <th>{t('flights.gate')}</th>
+                <th>{t('flights.aircraftModel')}</th>
+                <th>{t('flights.aircraftRegistration')}</th>
+                <th>{t('flights.status')}</th>
+                <th>{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody>
               {flights.map(f => (
                 <tr key={f.id}>
+                  <td><AirlineLogo code={f.airlineCode} name={f.airlineName} /></td>
                   <td>{f.flightNumber}</td>
                   <td>{f.origin}</td>
                   <td>{f.destination}</td>
                   <td className="num">{fmt(f.departureTime)}</td>
                   <td className="num">{fmt(f.arrivalTime)}</td>
                   <td>{f.gate?.name ?? '—'}</td>
+                  <td>{f.aircraftModel ?? '—'}</td>
+                  <td>{f.aircraftRegistration ?? '—'}</td>
                   <td><Status status={f.status} /></td>
                   <td className="actions">
                     <button className="btn small" aria-label="Просмотр" onClick={() => navigate(`/flights/${f.id}`)}>👁</button>

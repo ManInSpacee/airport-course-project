@@ -32,4 +32,29 @@ describe('validateFlightBody', () => {
     expect(validateFlightBody({ ...validBody, arrival_time: '2026-06-01T09:00:00Z' }))
       .toBe('Время прилёта должно быть позже времени вылета')
   })
+
+  it('ошибка если время прилёта равно времени вылета', () => {
+    expect(validateFlightBody({ ...validBody, arrival_time: '2026-06-01T10:00:00Z' }))
+      .toBe('Время прилёта должно быть позже времени вылета')
+  })
+
+  it('ошибка если название города слишком короткое', () => {
+    expect(validateFlightBody({ ...validBody, origin: 'А' }))
+      .toBe('Откуда: от 2 до 100 символов')
+  })
+
+  it('ошибка если название пункта назначения слишком короткое', () => {
+    expect(validateFlightBody({ ...validBody, destination: 'Я' }))
+      .toBe('Куда: от 2 до 100 символов')
+  })
+
+  it('ошибка если дата вылета невалидна', () => {
+    expect(validateFlightBody({ ...validBody, departure_time: 'не-дата' }))
+      .toBe('Некорректная дата вылета')
+  })
+
+  it('ошибка если год вылета слишком далеко в будущем', () => {
+    expect(validateFlightBody({ ...validBody, departure_time: '2099-06-01T10:00:00Z', arrival_time: '2099-06-01T12:00:00Z' }))
+      .toContain('Год вылета не может быть позднее')
+  })
 })

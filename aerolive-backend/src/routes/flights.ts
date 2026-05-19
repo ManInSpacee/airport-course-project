@@ -149,7 +149,8 @@ async function checkGateConflict(gate_id: number, dep: Date, arr: Date, excludeF
 }
 
 router.post('/', authenticate, async (req: Request, res: Response) => {
-  const { flight_number, origin, destination, departure_time, arrival_time, gate_id } = req.body
+  const { flight_number, origin, destination, departure_time, arrival_time, gate_id,
+    airline_name, airline_code, aircraft_model, aircraft_registration } = req.body
 
   const validationError = validateFlightBody(req.body)
   if (validationError) return res.status(400).json({ error: validationError })
@@ -170,6 +171,10 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
         departureTime: new Date(departure_time),
         arrivalTime: new Date(arrival_time),
         gateId: gate_id ? Number(gate_id) : null,
+        airlineName: airline_name || null,
+        airlineCode: airline_code ? String(airline_code).toUpperCase() : null,
+        aircraftModel: aircraft_model || null,
+        aircraftRegistration: aircraft_registration || null,
         createdById: req.user!.id
       },
       include: { gate: true }
@@ -224,7 +229,8 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
  *         description: Рейс не найден
  */
 router.put('/:id', authenticate, async (req: Request, res: Response) => {
-  const { flight_number, origin, destination, departure_time, arrival_time, gate_id } = req.body
+  const { flight_number, origin, destination, departure_time, arrival_time, gate_id,
+    airline_name, airline_code, aircraft_model, aircraft_registration } = req.body
 
   const validationError = validateFlightBody(req.body)
   if (validationError) return res.status(400).json({ error: validationError })
@@ -245,7 +251,11 @@ router.put('/:id', authenticate, async (req: Request, res: Response) => {
         flightNumber: flight_number, origin, destination,
         departureTime: departure_time ? new Date(departure_time) : undefined,
         arrivalTime: arrival_time ? new Date(arrival_time) : undefined,
-        gateId: gate_id !== undefined ? (gate_id ? Number(gate_id) : null) : undefined
+        gateId: gate_id !== undefined ? (gate_id ? Number(gate_id) : null) : undefined,
+        airlineName: airline_name !== undefined ? (airline_name || null) : undefined,
+        airlineCode: airline_code !== undefined ? (airline_code ? String(airline_code).toUpperCase() : null) : undefined,
+        aircraftModel: aircraft_model !== undefined ? (aircraft_model || null) : undefined,
+        aircraftRegistration: aircraft_registration !== undefined ? (aircraft_registration || null) : undefined,
       },
       include: { gate: true }
     })

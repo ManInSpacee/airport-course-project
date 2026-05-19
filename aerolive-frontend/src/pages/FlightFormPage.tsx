@@ -1,5 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { flightsApi } from '../api/flights'
 import { gatesApi } from '../api/gates'
 import type { Gate } from '../api/types'
@@ -17,6 +18,7 @@ export function FlightFormPage() {
   const isEdit = Boolean(id)
   const navigate = useNavigate()
   const { showToast } = useToast()
+  const { t } = useTranslation()
 
   const [gates, setGates] = useState<Gate[]>([])
   const [loading, setLoading] = useState(isEdit)
@@ -28,6 +30,10 @@ export function FlightFormPage() {
   const [departureTime, setDepartureTime] = useState('')
   const [arrivalTime, setArrivalTime] = useState('')
   const [gateId, setGateId] = useState('')
+  const [airlineName, setAirlineName] = useState('')
+  const [airlineCode, setAirlineCode] = useState('')
+  const [aircraftModel, setAircraftModel] = useState('')
+  const [aircraftRegistration, setAircraftRegistration] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [formError, setFormError] = useState('')
 
@@ -42,6 +48,10 @@ export function FlightFormPage() {
           setDepartureTime(toLocalInput(f.departureTime))
           setArrivalTime(toLocalInput(f.arrivalTime))
           setGateId(f.gate?.id ? String(f.gate.id) : '')
+          setAirlineName(f.airlineName ?? '')
+          setAirlineCode(f.airlineCode ?? '')
+          setAircraftModel(f.aircraftModel ?? '')
+          setAircraftRegistration(f.aircraftRegistration ?? '')
         })
         .catch(err => showToast(err.message, 'err'))
         .finally(() => setLoading(false))
@@ -53,34 +63,31 @@ export function FlightFormPage() {
     const maxYear = new Date().getFullYear() + 1
 
     if (!flightNumber.trim()) {
-      e.flightNumber = 'Обязательное поле'
+      e.flightNumber = t('flights.required')
     } else if (!/^[A-Z0-9]{1,3}-\d{1,4}$/.test(flightNumber.trim())) {
       e.flightNumber = 'Формат: SU-101, U6-205, DP-3'
     }
 
-    if (!origin.trim()) e.origin = 'Обязательное поле'
+    if (!origin.trim()) e.origin = t('flights.required')
     else if (origin.trim().length < 2) e.origin = 'Минимум 2 символа'
 
-    if (!destination.trim()) e.destination = 'Обязательное поле'
+    if (!destination.trim()) e.destination = t('flights.required')
     else if (destination.trim().length < 2) e.destination = 'Минимум 2 символа'
 
     if (origin.trim() && destination.trim() && origin.trim().toLowerCase() === destination.trim().toLowerCase())
       e.destination = 'Откуда и куда не могут совпадать'
 
-    if (!departureTime) {
-      e.departureTime = 'Обязательное поле'
-    } else if (new Date(departureTime).getFullYear() > maxYear) {
-      e.departureTime = `Год не может быть позднее ${maxYear}`
-    }
+    if (!departureTime) e.departureTime = t('flights.required')
+    else if (new Date(departureTime).getFullYear() > maxYear) e.departureTime = `Год не может быть позднее ${maxYear}`
 
-    if (!arrivalTime) {
-      e.arrivalTime = 'Обязательное поле'
-    } else if (new Date(arrivalTime).getFullYear() > maxYear) {
-      e.arrivalTime = `Год не может быть позднее ${maxYear}`
-    }
+    if (!arrivalTime) e.arrivalTime = t('flights.required')
+    else if (new Date(arrivalTime).getFullYear() > maxYear) e.arrivalTime = `Год не может быть позднее ${maxYear}`
 
     if (departureTime && arrivalTime && arrivalTime <= departureTime)
       e.arrivalTime = 'Время прилёта должно быть позже вылета'
+
+    if (airlineCode.trim() && !/^[A-Z0-9]{2,3}$/.test(airlineCode.trim().toUpperCase()))
+      e.airlineCode = 'IATA код: 2-3 буквы/цифры (SU, U6, DP)'
 
     return e
   }
@@ -100,15 +107,19 @@ export function FlightFormPage() {
       departureTime: new Date(departureTime).toISOString(),
       arrivalTime: new Date(arrivalTime).toISOString(),
       gateId: gateId ? Number(gateId) : null,
+      airlineName: airlineName.trim() || null,
+      airlineCode: airlineCode.trim() ? airlineCode.trim().toUpperCase() : null,
+      aircraftModel: aircraftModel.trim() || null,
+      aircraftRegistration: aircraftRegistration.trim() || null,
     }
     try {
       if (isEdit) {
         await flightsApi.update(Number(id), data)
-        showToast('Рейс обновлён')
+        showToast('OK')
         navigate(`/flights/${id}`)
       } else {
         const created = await flightsApi.create(data)
-        showToast('Рейс создан')
+        showToast('OK')
         navigate(`/flights/${created.id}`)
       }
     } catch (err: any) {
@@ -118,31 +129,31 @@ export function FlightFormPage() {
     }
   }
 
-  if (loading) return <Frame><div className="loading">Загрузка...</div></Frame>
+  if (loading) return <Frame><div className="loading">{t('common.loading')}</div></Frame>
 
   return (
     <Frame>
       <div className="breadcrumb">
-        <button className="btn link" onClick={() => navigate(isEdit ? `/flights/${id}` : '/flights')}>← Назад</button>
+        <button className="btn link" onClick={() => navigate(isEdit ? `/flights/${id}` : '/flights')}>← {t('common.back')}</button>
       </div>
-      <h1 className="page-title">{isEdit ? 'Редактировать рейс' : 'Новый рейс'}</h1>
+      <h1 className="page-title">{isEdit ? t('flights.editFlight') : t('flights.newFlight')}</h1>
 
       <form onSubmit={handleSubmit} style={{ maxWidth: 480 }}>
         <div className="form-row">
-          <label className="lbl">Номер рейса *</label>
+          <label className="lbl">{t('flights.number')} *</label>
           <input className={`ctl${errors.flightNumber ? ' err' : ''}`} value={flightNumber}
             placeholder="SU-100" onChange={e => setFlightNumber(e.target.value)} />
           {errors.flightNumber && <div className="err-msg">{errors.flightNumber}</div>}
         </div>
         <div className="row">
           <div className="form-row">
-            <label className="lbl">Откуда *</label>
+            <label className="lbl">{t('flights.origin')} *</label>
             <input className={`ctl${errors.origin ? ' err' : ''}`} value={origin}
               placeholder="Москва" onChange={e => setOrigin(e.target.value)} />
             {errors.origin && <div className="err-msg">{errors.origin}</div>}
           </div>
           <div className="form-row">
-            <label className="lbl">Куда *</label>
+            <label className="lbl">{t('flights.destination')} *</label>
             <input className={`ctl${errors.destination ? ' err' : ''}`} value={destination}
               placeholder="Сочи" onChange={e => setDestination(e.target.value)} />
             {errors.destination && <div className="err-msg">{errors.destination}</div>}
@@ -150,34 +161,64 @@ export function FlightFormPage() {
         </div>
         <div className="row">
           <div className="form-row">
-            <label className="lbl">Дата и время вылета *</label>
+            <label className="lbl">{t('flights.departureLabel')} *</label>
             <input className={`ctl${errors.departureTime ? ' err' : ''}`} type="datetime-local"
               value={departureTime} onChange={e => setDepartureTime(e.target.value)} />
             {errors.departureTime && <div className="err-msg">{errors.departureTime}</div>}
           </div>
           <div className="form-row">
-            <label className="lbl">Дата и время прилёта *</label>
+            <label className="lbl">{t('flights.arrivalLabel')} *</label>
             <input className={`ctl${errors.arrivalTime ? ' err' : ''}`} type="datetime-local"
               value={arrivalTime} onChange={e => setArrivalTime(e.target.value)} />
             {errors.arrivalTime && <div className="err-msg">{errors.arrivalTime}</div>}
           </div>
         </div>
         <div className="form-row">
-          <label className="lbl">Гейт</label>
+          <label className="lbl">{t('flights.gate')}</label>
           <select className="ctl" value={gateId} onChange={e => setGateId(e.target.value)}>
-            <option value="">— Не назначен —</option>
+            <option value="">{t('flights.notAssigned')}</option>
             {gates.map(g => <option key={g.id} value={g.id}>{g.name} (Терминал {g.terminal})</option>)}
           </select>
         </div>
+
+        <h3 style={{ marginTop: 24, marginBottom: 8 }}>{t('flights.airline')}</h3>
+        <div className="row">
+          <div className="form-row">
+            <label className="lbl">{t('flights.airlineName')}</label>
+            <input className="ctl" value={airlineName}
+              placeholder="Аэрофлот" onChange={e => setAirlineName(e.target.value)} />
+          </div>
+          <div className="form-row">
+            <label className="lbl">{t('flights.airlineCode')}</label>
+            <input className={`ctl${errors.airlineCode ? ' err' : ''}`} value={airlineCode}
+              placeholder="SU" maxLength={3}
+              onChange={e => setAirlineCode(e.target.value.toUpperCase())} />
+            {errors.airlineCode && <div className="err-msg">{errors.airlineCode}</div>}
+          </div>
+        </div>
+
+        <h3 style={{ marginTop: 16, marginBottom: 8 }}>{t('flights.aircraft')}</h3>
+        <div className="row">
+          <div className="form-row">
+            <label className="lbl">{t('flights.aircraftModel')}</label>
+            <input className="ctl" value={aircraftModel}
+              placeholder="Boeing 737-800" onChange={e => setAircraftModel(e.target.value)} />
+          </div>
+          <div className="form-row">
+            <label className="lbl">{t('flights.aircraftRegistration')}</label>
+            <input className="ctl" value={aircraftRegistration}
+              placeholder="RA-73770" onChange={e => setAircraftRegistration(e.target.value)} />
+          </div>
+        </div>
+
         {formError && <div className="err-msg" style={{ marginBottom: 8 }}>{formError}</div>}
         <div className="toolbar" style={{ marginTop: 16 }}>
-          <button className="btn" type="button" onClick={() => navigate(isEdit ? `/flights/${id}` : '/flights')}>Отмена</button>
+          <button className="btn" type="button" onClick={() => navigate(isEdit ? `/flights/${id}` : '/flights')}>{t('common.cancel')}</button>
           <button className="btn primary" type="submit" disabled={saving}>
-            {saving ? 'Сохранение...' : 'Сохранить'}
+            {saving ? t('common.saving') : t('common.save')}
           </button>
         </div>
       </form>
     </Frame>
   )
 }
-

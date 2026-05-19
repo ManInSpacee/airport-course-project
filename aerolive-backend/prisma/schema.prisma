@@ -31,19 +31,23 @@ model Gate {
 }
 
 model Flight {
-  id            Int          @id @default(autoincrement())
-  flightNumber  String       @unique @map("flight_number")
-  origin        String
-  destination   String
-  departureTime DateTime     @map("departure_time")
-  arrivalTime   DateTime     @map("arrival_time")
-  gateId        Int?         @map("gate_id")
-  gate          Gate?        @relation(fields: [gateId], references: [id])
-  status        FlightStatus @default(SCHEDULED)
-  createdById   Int          @map("created_by_id")
-  createdBy     User         @relation(fields: [createdById], references: [id])
-  createdAt     DateTime     @default(now()) @map("created_at")
-  updatedAt     DateTime     @updatedAt @map("updated_at")
+  id                   Int          @id @default(autoincrement())
+  flightNumber         String       @unique @map("flight_number")
+  origin               String
+  destination          String
+  departureTime        DateTime     @map("departure_time")
+  arrivalTime          DateTime     @map("arrival_time")
+  gateId               Int?         @map("gate_id")
+  gate                 Gate?        @relation(fields: [gateId], references: [id])
+  status               FlightStatus @default(SCHEDULED)
+  airlineName          String?      @map("airline_name")
+  airlineCode          String?      @map("airline_code")
+  aircraftModel        String?      @map("aircraft_model")
+  aircraftRegistration String?      @map("aircraft_registration")
+  createdById          Int          @map("created_by_id")
+  createdBy            User         @relation(fields: [createdById], references: [id])
+  createdAt            DateTime     @default(now()) @map("created_at")
+  updatedAt            DateTime     @updatedAt @map("updated_at")
 }
 
 enum FlightStatus {
