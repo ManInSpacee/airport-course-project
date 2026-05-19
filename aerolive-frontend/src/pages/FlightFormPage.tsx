@@ -81,7 +81,6 @@ export function FlightFormPage() {
   function handleAirlineChange(code: string) {
     setAirlineCode(code)
     setAircraftModel('')
-    const airline = AIRLINES.find(a => a.code === code)
     // Автозаполнение номера рейса префиксом
     if (code && !flightNumber) {
       setFlightNumber(code + '-')
