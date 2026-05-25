@@ -5,6 +5,10 @@ import app from '../app'
 // Логин с реальным пользователем из seed
 const ADMIN = { email: 'admin@airport.com', password: 'admin123' }
 
+function hoursFromNow(h: number) {
+  return new Date(Date.now() + h * 3600000).toISOString()
+}
+
 async function getToken() {
   const res = await request(app).post('/api/auth/login').send(ADMIN)
   return res.body.token as string
@@ -45,10 +49,10 @@ describe('POST /api/flights', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         flight_number: 'INVALID',
-        origin: 'Москва',
-        destination: 'Сочи',
-        departure_time: '2026-06-01T10:00:00Z',
-        arrival_time: '2026-06-01T12:00:00Z',
+        origin: 'Москва (SVO)',
+        destination: 'Сочи (AER)',
+        departure_time: hoursFromNow(2),
+        arrival_time: hoursFromNow(4),
       })
     expect(res.status).toBe(400)
     expect(res.body.error).toContain('формат')
@@ -59,8 +63,8 @@ describe('POST /api/flights', () => {
       flight_number: 'SU-101',
       origin: 'Москва',
       destination: 'Сочи',
-      departure_time: '2026-06-01T10:00:00Z',
-      arrival_time: '2026-06-01T12:00:00Z',
+      departure_time: hoursFromNow(2),
+      arrival_time: hoursFromNow(4),
     })
     expect(res.status).toBe(401)
   })
@@ -74,8 +78,8 @@ describe('POST /api/flights', () => {
         flight_number: 'SU-102',
         origin: 'Москва',
         destination: 'Москва',
-        departure_time: '2026-06-01T10:00:00Z',
-        arrival_time: '2026-06-01T12:00:00Z',
+        departure_time: hoursFromNow(2),
+        arrival_time: hoursFromNow(4),
       })
     expect(res.status).toBe(400)
     expect(res.body.error).toContain('совпадать')
@@ -88,10 +92,10 @@ describe('POST /api/flights', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         flight_number: 'SU-103',
-        origin: 'Москва',
-        destination: 'Сочи',
-        departure_time: '2026-06-01T12:00:00Z',
-        arrival_time: '2026-06-01T10:00:00Z',
+        origin: 'Москва (SVO)',
+        destination: 'Сочи (AER)',
+        departure_time: hoursFromNow(4),
+        arrival_time: hoursFromNow(2),
       })
     expect(res.status).toBe(400)
     expect(res.body.error).toContain('позже')
@@ -105,10 +109,10 @@ describe('POST /api/flights', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         flight_number: number,
-        origin: 'Москва',
-        destination: 'Казань',
-        departure_time: '2027-06-01T10:00:00Z',
-        arrival_time: '2027-06-01T12:00:00Z',
+        origin: 'Москва (SVO)',
+        destination: 'Казань (KZN)',
+        departure_time: hoursFromNow(24),
+        arrival_time: hoursFromNow(26),
       })
     expect(res.status).toBe(201)
     expect(res.body.flightNumber).toBe(number)

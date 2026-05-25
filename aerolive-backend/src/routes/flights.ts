@@ -1,12 +1,19 @@
-import { Router, Request, Response } from 'express'
-import { prisma } from '../lib/prisma'
-import { authenticate } from '../middleware/auth'
-import { requireRole } from '../middleware/requireRole'
-import { logAction } from '../utils/audit'
-import { validateFlightBody } from '../utils/validateFlight'
+import { Router, Request, Response } from "express";
+import { prisma } from "../lib/prisma";
+import { authenticate } from "../middleware/auth";
+import { requireRole } from "../middleware/requireRole";
+import { logAction } from "../utils/audit";
+import { validateFlightBody } from "../utils/validateFlight";
 
-const router = Router()
-const VALID_STATUSES = ['SCHEDULED', 'BOARDING', 'DEPARTED', 'ARRIVED', 'DELAYED', 'CANCELLED']
+const router = Router();
+const VALID_STATUSES = [
+  "SCHEDULED",
+  "BOARDING",
+  "DEPARTED",
+  "ARRIVED",
+  "DELAYED",
+  "CANCELLED",
+];
 
 /**
  * @swagger
@@ -45,21 +52,28 @@ const VALID_STATUSES = ['SCHEDULED', 'BOARDING', 'DEPARTED', 'ARRIVED', 'DELAYED
  *       200:
  *         description: Список рейсов
  */
-router.get('/', authenticate, async (req: Request, res: Response) => {
-  const { status, origin, destination, gate_id } = req.query as Record<string, string>
-  const where: any = {}
-  if (status) where.status = status
-  if (origin) where.origin = { contains: origin, mode: 'insensitive' }
-  if (destination) where.destination = { contains: destination, mode: 'insensitive' }
-  if (gate_id) where.gateId = Number(gate_id)
+router.get("/", authenticate, async (req: Request, res: Response) => {
+  const { status, origin, destination, gate_id } = req.query as Record<
+    string,
+    string
+  >;
+  const where: any = {};
+  if (status) where.status = status;
+  if (origin) where.origin = { contains: origin, mode: "insensitive" };
+  if (destination)
+    where.destination = { contains: destination, mode: "insensitive" };
+  if (gate_id) where.gateId = Number(gate_id);
 
   const flights = await prisma.flight.findMany({
     where,
-    include: { gate: true, createdBy: { select: { id: true, username: true } } },
-    orderBy: { departureTime: 'asc' }
-  })
-  res.json(flights)
-})
+    include: {
+      gate: true,
+      createdBy: { select: { id: true, username: true } },
+    },
+    orderBy: { departureTime: "asc" },
+  });
+  res.json(flights);
+});
 
 /**
  * @swagger
@@ -81,14 +95,17 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
  *       404:
  *         description: Рейс не найден
  */
-router.get('/:id', authenticate, async (req: Request, res: Response) => {
+router.get("/:id", authenticate, async (req: Request, res: Response) => {
   const flight = await prisma.flight.findUnique({
     where: { id: Number(req.params.id) },
-    include: { gate: true, createdBy: { select: { id: true, username: true } } }
-  })
-  if (!flight) return res.status(404).json({ error: 'Рейс не найден' })
-  res.json(flight)
-})
+    include: {
+      gate: true,
+      createdBy: { select: { id: true, username: true } },
+    },
+  });
+  if (!flight) return res.status(404).json({ error: "Рейс не найден" });
+  res.json(flight);
+});
 
 /**
  * @swagger
@@ -132,42 +149,63 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
  *       409:
  *         description: Конфликт гейта
  */
-const GATE_BUFFER_MS = 45 * 60 * 1000
+const GATE_BUFFER_MS = 45 * 60 * 1000;
 
-async function checkGateConflict(gate_id: number, dep: Date, arr: Date, excludeFlightId?: number) {
-  const depWithBuffer = new Date(dep.getTime() - GATE_BUFFER_MS)
-  const arrWithBuffer = new Date(arr.getTime() + GATE_BUFFER_MS)
+async function checkGateConflict(
+  gate_id: number,
+  dep: Date,
+  arr: Date,
+  excludeFlightId?: number,
+) {
+  const depWithBuffer = new Date(dep.getTime() - GATE_BUFFER_MS);
+  const arrWithBuffer = new Date(arr.getTime() + GATE_BUFFER_MS);
   return prisma.flight.findFirst({
     where: {
       gateId: gate_id,
-      status: { notIn: ['CANCELLED', 'DEPARTED', 'ARRIVED'] },
+      status: { notIn: ["CANCELLED", "DEPARTED", "ARRIVED"] },
       departureTime: { lt: arrWithBuffer },
       arrivalTime: { gt: depWithBuffer },
-      ...(excludeFlightId ? { id: { not: excludeFlightId } } : {})
-    }
-  })
+      ...(excludeFlightId ? { id: { not: excludeFlightId } } : {}),
+    },
+  });
 }
 
-router.post('/', authenticate, async (req: Request, res: Response) => {
-  const { flight_number, origin, destination, departure_time, arrival_time, gate_id,
-    airline_name, airline_code, aircraft_model, aircraft_registration } = req.body
+router.post("/", authenticate, async (req: Request, res: Response) => {
+  const {
+    flight_number,
+    origin,
+    destination,
+    departure_time,
+    arrival_time,
+    gate_id,
+    airline_name,
+    airline_code,
+    aircraft_model,
+    aircraft_registration,
+  } = req.body;
 
-  const validationError = validateFlightBody(req.body)
-  if (validationError) return res.status(400).json({ error: validationError })
+  const validationError = validateFlightBody(req.body);
+  if (validationError) return res.status(400).json({ error: validationError });
 
   if (gate_id) {
-    const conflict = await checkGateConflict(Number(gate_id), new Date(departure_time), new Date(arrival_time))
+    const conflict = await checkGateConflict(
+      Number(gate_id),
+      new Date(departure_time),
+      new Date(arrival_time),
+    );
     if (conflict) {
       return res.status(409).json({
-        error: `Гейт занят: рейс ${conflict.flightNumber} уже назначен на это время`
-      })
+        error: `Гейт занят: рейс ${conflict.flightNumber} уже назначен на это время`,
+      });
     }
   }
 
   try {
     const flight = await prisma.flight.create({
       data: {
-        flightNumber: flight_number, origin, destination,
+        flightNumber: flight_number,
+        origin,
+        destination,
         departureTime: new Date(departure_time),
         arrivalTime: new Date(arrival_time),
         gateId: gate_id ? Number(gate_id) : null,
@@ -175,17 +213,26 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
         airlineCode: airline_code ? String(airline_code).toUpperCase() : null,
         aircraftModel: aircraft_model || null,
         aircraftRegistration: aircraft_registration || null,
-        createdById: req.user!.id
+        createdById: req.user!.id,
       },
-      include: { gate: true }
-    })
-    await logAction(req.user!.id, 'CREATE', 'Flight', flight.id, `Создан рейс ${flight_number}`)
-    res.status(201).json(flight)
+      include: { gate: true },
+    });
+    await logAction(
+      req.user!.id,
+      "CREATE",
+      "Flight",
+      flight.id,
+      `Создан рейс ${flight_number}`,
+    );
+    res.status(201).json(flight);
   } catch (err: any) {
-    if (err.code === 'P2002') return res.status(400).json({ error: 'Рейс с таким номером уже существует' })
-    res.status(500).json({ error: 'Ошибка сервера' })
+    if (err.code === "P2002")
+      return res
+        .status(400)
+        .json({ error: "Рейс с таким номером уже существует" });
+    res.status(500).json({ error: "Ошибка сервера" });
   }
-})
+});
 
 /**
  * @swagger
@@ -228,19 +275,34 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
  *       404:
  *         description: Рейс не найден
  */
-router.put('/:id', authenticate, async (req: Request, res: Response) => {
-  const { flight_number, origin, destination, departure_time, arrival_time, gate_id,
-    airline_name, airline_code, aircraft_model, aircraft_registration } = req.body
+router.put("/:id", authenticate, async (req: Request, res: Response) => {
+  const {
+    flight_number,
+    origin,
+    destination,
+    departure_time,
+    arrival_time,
+    gate_id,
+    airline_name,
+    airline_code,
+    aircraft_model,
+    aircraft_registration,
+  } = req.body;
 
-  const validationError = validateFlightBody(req.body)
-  if (validationError) return res.status(400).json({ error: validationError })
+  const validationError = validateFlightBody(req.body);
+  if (validationError) return res.status(400).json({ error: validationError });
 
   if (gate_id) {
-    const conflict = await checkGateConflict(Number(gate_id), new Date(departure_time), new Date(arrival_time), Number(req.params.id))
+    const conflict = await checkGateConflict(
+      Number(gate_id),
+      new Date(departure_time),
+      new Date(arrival_time),
+      Number(req.params.id),
+    );
     if (conflict) {
       return res.status(409).json({
-        error: `Гейт занят: рейс ${conflict.flightNumber} уже назначен на это время`
-      })
+        error: `Гейт занят: рейс ${conflict.flightNumber} уже назначен на это время`,
+      });
     }
   }
 
@@ -248,23 +310,46 @@ router.put('/:id', authenticate, async (req: Request, res: Response) => {
     const flight = await prisma.flight.update({
       where: { id: Number(req.params.id) },
       data: {
-        flightNumber: flight_number, origin, destination,
+        flightNumber: flight_number,
+        origin,
+        destination,
         departureTime: departure_time ? new Date(departure_time) : undefined,
         arrivalTime: arrival_time ? new Date(arrival_time) : undefined,
-        gateId: gate_id !== undefined ? (gate_id ? Number(gate_id) : null) : undefined,
-        airlineName: airline_name !== undefined ? (airline_name || null) : undefined,
-        airlineCode: airline_code !== undefined ? (airline_code ? String(airline_code).toUpperCase() : null) : undefined,
-        aircraftModel: aircraft_model !== undefined ? (aircraft_model || null) : undefined,
-        aircraftRegistration: aircraft_registration !== undefined ? (aircraft_registration || null) : undefined,
+        gateId:
+          gate_id !== undefined
+            ? gate_id
+              ? Number(gate_id)
+              : null
+            : undefined,
+        airlineName:
+          airline_name !== undefined ? airline_name || null : undefined,
+        airlineCode:
+          airline_code !== undefined
+            ? airline_code
+              ? String(airline_code).toUpperCase()
+              : null
+            : undefined,
+        aircraftModel:
+          aircraft_model !== undefined ? aircraft_model || null : undefined,
+        aircraftRegistration:
+          aircraft_registration !== undefined
+            ? aircraft_registration || null
+            : undefined,
       },
-      include: { gate: true }
-    })
-    await logAction(req.user!.id, 'UPDATE', 'Flight', flight.id, `Обновлён рейс ${flight.flightNumber}`)
-    res.json(flight)
+      include: { gate: true },
+    });
+    await logAction(
+      req.user!.id,
+      "UPDATE",
+      "Flight",
+      flight.id,
+      `Обновлён рейс ${flight.flightNumber}`,
+    );
+    res.json(flight);
   } catch {
-    res.status(404).json({ error: 'Рейс не найден' })
+    res.status(404).json({ error: "Рейс не найден" });
   }
-})
+});
 
 /**
  * @swagger
@@ -300,23 +385,38 @@ router.put('/:id', authenticate, async (req: Request, res: Response) => {
  *       404:
  *         description: Рейс не найден
  */
-router.patch('/:id/status', authenticate, async (req: Request, res: Response) => {
-  const { status } = req.body
-  if (!VALID_STATUSES.includes(status)) {
-    return res.status(400).json({ error: `Допустимые статусы: ${VALID_STATUSES.join(', ')}` })
-  }
-  try {
-    const flight = await prisma.flight.update({
-      where: { id: Number(req.params.id) },
-      data: { status },
-      include: { gate: true, createdBy: { select: { id: true, username: true } } }
-    })
-    await logAction(req.user!.id, 'STATUS_CHANGE', 'Flight', flight.id, `Статус рейса ${flight.flightNumber} → ${status}`)
-    res.json(flight)
-  } catch {
-    res.status(404).json({ error: 'Рейс не найден' })
-  }
-})
+router.patch(
+  "/:id/status",
+  authenticate,
+  async (req: Request, res: Response) => {
+    const { status } = req.body;
+    if (!VALID_STATUSES.includes(status)) {
+      return res
+        .status(400)
+        .json({ error: `Допустимые статусы: ${VALID_STATUSES.join(", ")}` });
+    }
+    try {
+      const flight = await prisma.flight.update({
+        where: { id: Number(req.params.id) },
+        data: { status },
+        include: {
+          gate: true,
+          createdBy: { select: { id: true, username: true } },
+        },
+      });
+      await logAction(
+        req.user!.id,
+        "STATUS_CHANGE",
+        "Flight",
+        flight.id,
+        `Статус рейса ${flight.flightNumber} → ${status}`,
+      );
+      res.json(flight);
+    } catch {
+      res.status(404).json({ error: "Рейс не найден" });
+    }
+  },
+);
 
 /**
  * @swagger
@@ -340,14 +440,27 @@ router.patch('/:id/status', authenticate, async (req: Request, res: Response) =>
  *       404:
  *         description: Рейс не найден
  */
-router.delete('/:id', authenticate, requireRole('ADMIN'), async (req: Request, res: Response) => {
-  try {
-    const flight = await prisma.flight.delete({ where: { id: Number(req.params.id) } })
-    await logAction(req.user!.id, 'DELETE', 'Flight', Number(req.params.id), `Удалён рейс ${flight.flightNumber}`)
-    res.json({ message: 'Рейс удалён' })
-  } catch {
-    res.status(404).json({ error: 'Рейс не найден' })
-  }
-})
+router.delete(
+  "/:id",
+  authenticate,
+  requireRole("ADMIN"),
+  async (req: Request, res: Response) => {
+    try {
+      const flight = await prisma.flight.delete({
+        where: { id: Number(req.params.id) },
+      });
+      await logAction(
+        req.user!.id,
+        "DELETE",
+        "Flight",
+        Number(req.params.id),
+        `Удалён рейс ${flight.flightNumber}`,
+      );
+      res.json({ message: "Рейс удалён" });
+    } catch {
+      res.status(404).json({ error: "Рейс не найден" });
+    }
+  },
+);
 
-export default router
+export default router;

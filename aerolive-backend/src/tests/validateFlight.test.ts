@@ -1,13 +1,20 @@
 import { describe, it, expect } from 'vitest'
 import { validateFlightBody } from '../utils/validateFlight'
 
+function hoursFromNow(h: number) {
+  return new Date(Date.now() + h * 3600000).toISOString()
+}
+
 const validBody = {
   flight_number: 'SU-101',
-  origin: 'Москва',
-  destination: 'Сочи',
-  departure_time: '2026-06-01T10:00:00Z',
-  arrival_time: '2026-06-01T12:00:00Z',
+  origin: 'Москва (SVO)',
+  destination: 'Сочи (AER)',
+  departure_time: hoursFromNow(2),
+  arrival_time: hoursFromNow(4),
 }
+
+const farFuture = new Date()
+farFuture.setFullYear(farFuture.getFullYear() + 10)
 
 describe('validateFlightBody', () => {
   it('возвращает null если все поля корректны', () => {
@@ -24,17 +31,17 @@ describe('validateFlightBody', () => {
   })
 
   it('ошибка если откуда и куда совпадают', () => {
-    expect(validateFlightBody({ ...validBody, destination: 'Москва' }))
+    expect(validateFlightBody({ ...validBody, destination: 'Москва (SVO)' }))
       .toBe('Откуда и куда не могут совпадать')
   })
 
   it('ошибка если время прилёта раньше вылета', () => {
-    expect(validateFlightBody({ ...validBody, arrival_time: '2026-06-01T09:00:00Z' }))
+    expect(validateFlightBody({ ...validBody, arrival_time: hoursFromNow(1) }))
       .toBe('Время прилёта должно быть позже времени вылета')
   })
 
   it('ошибка если время прилёта равно времени вылета', () => {
-    expect(validateFlightBody({ ...validBody, arrival_time: '2026-06-01T10:00:00Z' }))
+    expect(validateFlightBody({ ...validBody, arrival_time: validBody.departure_time }))
       .toBe('Время прилёта должно быть позже времени вылета')
   })
 
@@ -54,7 +61,9 @@ describe('validateFlightBody', () => {
   })
 
   it('ошибка если год вылета слишком далеко в будущем', () => {
-    expect(validateFlightBody({ ...validBody, departure_time: '2099-06-01T10:00:00Z', arrival_time: '2099-06-01T12:00:00Z' }))
+    const dep = farFuture.toISOString()
+    const arr = new Date(farFuture.getTime() + 2 * 3600000).toISOString()
+    expect(validateFlightBody({ ...validBody, departure_time: dep, arrival_time: arr }))
       .toContain('Год вылета не может быть позднее')
   })
 })

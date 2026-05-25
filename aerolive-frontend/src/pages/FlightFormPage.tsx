@@ -108,7 +108,10 @@ export function FlightFormPage() {
       e.origin = `Один из пунктов маршрута должен быть ${HOME_AIRPORT}`
     }
 
+    const now = new Date()
+
     if (!departureTime) e.departureTime = t('flights.required')
+    else if (new Date(departureTime) < now) e.departureTime = 'Время вылета не может быть в прошлом'
     else if (new Date(departureTime).getFullYear() > maxYear) e.departureTime = `Год не может быть позднее ${maxYear}`
 
     if (!arrivalTime) e.arrivalTime = t('flights.required')

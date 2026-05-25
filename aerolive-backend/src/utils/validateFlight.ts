@@ -27,6 +27,9 @@ export function validateFlightBody(body: any): string | null {
 
   if (isNaN(dep.getTime())) return 'Некорректная дата вылета'
   if (isNaN(arr.getTime())) return 'Некорректная дата прилёта'
+
+  const now = new Date()
+  if (dep < now) return 'Время вылета не может быть в прошлом'
   if (dep.getFullYear() > MAX_YEAR) return `Год вылета не может быть позднее ${MAX_YEAR}`
   if (arr.getFullYear() > MAX_YEAR) return `Год прилёта не может быть позднее ${MAX_YEAR}`
   if (arr <= dep) return 'Время прилёта должно быть позже времени вылета'
